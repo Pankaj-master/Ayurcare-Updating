@@ -1,0 +1,8 @@
+backend/node_modules/
+backend/dist/
+UI/node_modules/
+UI/dist/
+UI/src/components/.DS_Store
+UI/src/components/.vscode/
+UI/.env
+backend/.env

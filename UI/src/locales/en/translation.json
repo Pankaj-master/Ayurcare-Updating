@@ -1,0 +1,160 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "welcomeMessage": "Welcome back! Here's your practice overview.",
+    "addPatient": "Add Patient"
+  },
+  "recipes": {
+    "title": "Recipes",
+    "welcomeMessage": "Discover healing recipes with complete nutritional information",
+    "addRecipe": "Add Recipe",
+    "recipe1": {
+      "name": "Kitchari - Digestive Healing",
+      "description": "Classic Ayurvedic one-pot meal perfect for cleansing and digestion",
+      "difficulty": "Easy",
+      "dosha": ["Vata", "Pitta", "Kapha"],
+      "category": "Main Course",
+      "ingredients": [
+        "Mung dal",
+        "Basmati rice",
+        "Turmeric",
+        "Cumin",
+        "Ginger",
+        "Ghee"
+      ],
+      "benefits": ["Digestive healing", "Detoxification", "Easy to digest"],
+      "tags": ["cleansing", "detox", "easy-digest"]
+    },
+    "recipe2": {
+      "name": "Golden Milk Turmeric Latte",
+      "description": "Warming anti-inflammatory drink perfect for evening",
+      "difficulty": "Easy",
+      "dosha": ["Vata", "Kapha"],
+      "category": "Beverages",
+      "ingredients": [
+        "Turmeric",
+        "Coconut milk",
+        "Ginger",
+        "Cinnamon",
+        "Black pepper",
+        "Honey"
+      ],
+      "benefits": ["Anti-inflammatory", "Immunity boost", "Better sleep"],
+      "tags": ["immunity", "anti-inflammatory", "evening"]
+    },
+    "recipe3": {
+      "name": "Cooling Cucumber Raita",
+      "description": "Refreshing side dish to balance Pitta dosha",
+      "difficulty": "Easy",
+      "dosha": ["Pitta"],
+      "category": "Side Dish",
+      "ingredients": [
+        "Cucumber",
+        "Greek yogurt",
+        "Mint",
+        "Cumin",
+        "Black salt",
+        "Coriander"
+      ],
+      "benefits": ["Cooling effect", "Digestive aid", "Hydrating"],
+      "tags": ["cooling", "pitta", "hydrating"]
+    },
+    "recipe4": {
+      "name": "Spiced Quinoa Bowl",
+      "description": "Nutritious grain bowl with warming spices",
+      "difficulty": "Medium",
+      "dosha": ["Vata", "Kapha"],
+      "category": "Main Course",
+      "ingredients": [
+        "Quinoa",
+        "Sweet potato",
+        "Spinach",
+        "Chickpeas",
+        "Cumin",
+        "Turmeric"
+      ],
+      "benefits": ["High protein", "Grounding", "Nutrient dense"],
+      "tags": ["protein", "grounding", "nutritious"]
+    },
+    "recipe5": {
+      "name": "Digestive Tea Blend",
+      "description": "Herbal tea to kindle digestive fire",
+      "difficulty": "Easy",
+      "dosha": ["Vata", "Pitta", "Kapha"],
+      "category": "Beverages",
+      "ingredients": [
+        "Ginger",
+        "Fennel",
+        "Coriander seeds",
+        "Cardamom",
+        "Ajwain"
+      ],
+      "benefits": ["Digestive fire", "Reduces bloating", "After-meal aid"],
+      "tags": ["digestive", "herbal", "agni"]
+    },
+    "recipe6": {
+      "name": "Nourishing Bone Broth",
+      "description": "Deeply nourishing broth for building strength",
+      "difficulty": "Medium",
+      "dosha": ["Vata"],
+      "category": "Soups",
+      "ingredients": [
+        "Organic bones",
+        "Vegetables",
+        "Herbs",
+        "Ginger",
+        "Turmeric",
+        "Bay leaves"
+      ],
+      "benefits": ["Deep nourishment", "Joint health", "Building tissues"],
+      "tags": ["nourishing", "building", "strength"]
+    },
+    "vata": "Vata",
+    "pitta": "Pitta",
+    "kapha": "Kapha",
+    "organicBones": "Organic bones",
+    "vegetables": "Vegetables",
+    "herbs": "Herbs",
+    "ginger": "Ginger",
+    "turmeric": "Turmeric",
+    "bayLeaves": "Bay leaves",
+    "fennel": "Fennel",
+    "corianderSeeds": "Coriander seeds",
+    "cardamom": "Cardamom",
+    "ajwain": "Ajwain",
+    "quinoa": "Quinoa",
+    "sweetPotato": "Sweet potato",
+    "spinach": "Spinach",
+    "chickpeas": "Chickpeas",
+    "cumin": "Cumin",
+    "mungDal": "Mung dal",
+    "greekYogurt": "Greek yogurt",
+    "mint": "Mint",
+    "blackSalt": "Black salt",
+    "coriander": "Coriander",
+    "coconutMilk": "Coconut milk",
+    "cinnamon": "Cinnamon",
+    "blackPepper": "Black pepper",
+    "honey": "Honey",
+    "basmatiRice": "Basmati rice",
+    "ghee": "Ghee",
+    "digestiveHealing": "Digestive healing",
+    "detoxification": "Detoxification",
+    "easyToDigest": "Easy to digest",
+    "antiInflammatory": "Anti-inflammatory",
+    "immunityBoost": "Immunity boost",
+    "betterSleep": "Better sleep",
+    "coolingEffect": "Cooling effect",
+    "digestiveAid": "Digestive aid",
+    "hydrating": "Hydrating",
+    "highProtein": "High protein",
+    "grounding": "Grounding",
+    "nutrientDense": "Nutrient dense",
+    "digestiveFire": "Digestive fire",
+    "reducesBloating": "Reduces bloating",
+    "afterMealAid": "After-meal aid",
+    "deepNourishment": "Deep nourishment",
+    "jointHealth": "Joint health",
+    "buildingTissues": "Building tissues"
+  }
+}

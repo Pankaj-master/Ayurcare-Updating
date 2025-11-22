@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prisma Schema Diagram</title>
+    <style>
+        /* Basic page styling */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #1c1e21;
+            margin: 0;
+            padding: 0;
+            /* Default cursor is for panning */
+            cursor: grab;
+        }
+
+        /* Show grabbing cursor when panning */
+        body.panning {
+            cursor: grabbing;
+        }
+
+        /* Instructions are fixed to the viewport */
+        .instructions {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 100;
+            font-size: 0.9em;
+            border: 1px solid #ddd;
+            pointer-events: none; /* So it doesn't interfere with panning */
+        }
+
+        /* * The main container is now a large "canvas"
+         * that we will pan around in.
+         */
+        #diagram-container {
+            width: 3000px;
+            height: 2000px;
+            position: relative;
+            background-color: #f0f2f5;
+            background-image: 
+                linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* The bubble for each model */
+        .model-bubble {
+            position: absolute;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 2px solid #0056b3;
+            min-width: 220px;
+            max-width: 300px;
+            /* Cursor for dragging the bubble itself */
+            cursor: grab;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+            user-select: none;
+            z-index: 10;
+        }
+
+        .model-bubble:hover {
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .model-bubble.dragging {
+            cursor: grabbing;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            z-index: 11;
+        }
+
+        /* Header of the bubble */
+        .model-header {
+            background-color: #0056b3;
+            color: white;
+            padding: 10px 15px;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        
+        /* Header colors for models vs enums */
+        .model-bubble.type-enum .model-header { background-color: #6c757d; }
+        .model-bubble.type-enum { border-color: #6c757d; }
+        .model-bubble.type-model .model-header { background-color: #0056b3; }
+        .model-bubble.type-model { border-color: #0056b3; }
+
+        /* List of fields */
+        .field-list {
+            list-style: none;
+            padding: 5px 15px 10px 15px;
+            margin: 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .field-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .field-list li:last-child {
+            border-bottom: none;
+        }
+
+        .field-name {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .field-type {
+            color: #555;
+            margin-left: 8px;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.95em;
+        }
+        
+        .field-relation {
+            font-weight: 600;
+            color: #0056b3;
+        }
+
+        /* * The SVG layer for drawing arrows.
+         * It must be the same size as the diagram-container.
+         */
+        #arrow-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows clicking through the SVG */
+            z-index: 1;
+        }
+
+        .arrow-line {
+            stroke: #555;
+            stroke-width: 2;
+            fill: none;
+            transition: stroke 0.2s ease;
+        }
+
+        /* Highlight classes */
+        .model-bubble.highlight,
+        .model-bubble.highlight-secondary {
+            border-width: 3px;
+            transform: scale(1.02);
+        }
+        
+        .model-bubble.highlight {
+            border-color: #d9006c;
+            box-shadow: 0 0 20px rgba(217, 0, 108, 0.5);
+        }
+        
+        .model-bubble.highlight-secondary {
+            border-color: #007bff;
+            box-shadow: 0 0 15px rgba(0, 123, 255, 0.4);
+        }
+
+        .arrow-line.highlight {
+            stroke: #d9006c;
+            stroke-width: 4;
+        }
+        
+        .arrow-line.highlight-secondary {
+            stroke: #007bff;
+            stroke-width: 3;
+        }
+        
+        /* Dim elements when one is highlighted */
+        .dimmed .model-bubble:not(.highlight, .highlight-secondary) {
+            opacity: 0.3;
+        }
+        
+        .dimmed .arrow-line:not(.highlight, .highlight-secondary) {
+            opacity: 0.1;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="instructions">
+        <strong>Drag background</strong> to pan. <strong>Drag a bubble</strong> to move it. <strong>Click a bubble</strong> to highlight.
+    </div>
+
+    <!-- Main container for bubbles -->
+    <div id="diagram-container">
+        <!-- Bubbles will be injected here by JavaScript -->
+    </div>
+
+    <!-- SVG layer for arrows (same size as container) -->
+    <svg id="arrow-layer"></svg>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 1. DEFINE SCHEMA DATA ---
+            const CANVAS_WIDTH = 3000;
+            const CANVAS_HEIGHT = 2000;
+
+            // Define nodes (models/enums) and their initial positions on the large canvas
+            const nodes = {
+                'User': { x: 1000, y: 200, type: 'model', fields: ['id', 'email', 'name', 'role', '...'] },
+                'Patient': { x: 1000, y: 600, type: 'model', fields: ['id', 'userId', 'doctorId', 'patientCode'] },
+                'Food': { x: 300, y: 1000, type: 'model', fields: ['id', 'name', 'category', 'calories', '...'] },
+                'Recipe': { x: 1000, y: 1000, type: 'model', fields: ['id', 'name', 'instructions', 'prepTime', '...'] },
+                'RecipeItem': { x: 650, y: 1300, type: 'model', fields: ['id', 'recipeId', 'foodId', 'quantity'] },
+                'DietPlan': { x: 1600, y: 600, type: 'model', fields: ['id', 'name', 'doctorId', 'patientId', '...'] },
+                'DietPlanItem': { x: 1300, y: 1000, type: 'model', fields: ['id', 'dietPlanId', 'foodId', 'recipeId', '...'] },
+                'Appointment': { x: 300, y: 600, type: 'model', fields: ['id', 'doctorId', 'patientId', 'date', '...'] },
+                'HealthRecord': { x: 300, y: 200, type: 'model', fields: ['id', 'patientId', 'date', 'weight', '...'] },
+                'ChatMessage': { x: 2000, y: 400, type: 'model', fields: ['id', 'senderId', 'receiverId', 'message', '...'] },
+                'Reminder': { x: 2000, y: 700, type: 'model', fields: ['id', 'userId', 'title', 'message', '...'] },
+                'Collection': { x: 2000, y: 1000, type: 'model', fields: ['id', 'name', 'doctorId', 'isPublic', '...'] },
+                'Enums': { x: 300, y: 1400, type: 'enum', fields: ['UserRole', 'DoshaType', 'MealType', 'FoodCategory'] }
+            };
+
+            // Define edges (relationships)
+            const edges = [
+                { from: 'User', to: 'Patient', label: 'doctorPatients/patientProfile' },
+                { from: 'User', to: 'Appointment', label: 'Appointments' },
+                { from: 'User', to: 'DietPlan', label: 'DietPlans' },
+                { from: 'User', to: 'ChatMessage', label: 'Messages' },
+                { from: 'User', to: 'HealthRecord', label: 'healthRecords' },
+                { from: 'User', to: 'Reminder', label: 'reminders' },
+                { from: 'User', to: 'Collection', label: 'collections' },
+                { from: 'Patient', to: 'User', label: 'user/doctor' },
+                { from: 'Patient', to: 'ChatMessage', label: 'chatMessages' },
+                { from: 'Food', to: 'RecipeItem', label: 'recipeItems' },
+                { from: 'Food', to: 'DietPlanItem', label: 'dietPlanItems' },
+                { from: 'Recipe', to: 'RecipeItem', label: 'items' },
+                { from: 'Recipe', to: 'DietPlanItem', label: 'dietPlanItems' },
+                { from: 'RecipeItem', to: 'Recipe', label: 'recipe' },
+                { from: 'RecipeItem', to: 'Food', label: 'food' },
+                { from: 'DietPlan', to: 'User', label: 'doctor/patient' },
+                { from: 'DietPlan', to: 'DietPlanItem', label: 'items' },
+                { from: 'DietPlanItem', to: 'DietPlan', label: 'dietPlan' },
+                { from: 'DietPlanItem', to: 'Food', label: 'food' },
+                { from: 'DietPlanItem', to: 'Recipe', label: 'recipe' },
+                { from: 'Appointment', to: 'User', label: 'doctor/patient' },
+                { from: 'HealthRecord', to: 'User', label: 'patient' },
+                { from: 'ChatMessage', to: 'User', label: 'sender/receiver' },
+                { from: 'ChatMessage', to: 'Patient', label: 'patient' },
+                { from: 'Reminder', to: 'User', label: 'user' },
+                { from: 'Collection', to: 'User', label: 'doctor' },
+            ];
+
+            const diagramContainer = document.getElementById('diagram-container');
+            const svgLayer = document.getElementById('arrow-layer');
+            
+            // Set canvas and SVG layer size
+            diagramContainer.style.width = `${CANVAS_WIDTH}px`;
+            diagramContainer.style.height = `${CANVAS_HEIGHT}px`;
+            svgLayer.setAttribute('width', CANVAS_WIDTH);
+            svgLayer.setAttribute('height', CANVAS_HEIGHT);
+
+            // --- 2. RENDER BUBBLES ---
+            Object.keys(nodes).forEach(nodeId => {
+                const node = nodes[nodeId];
+                const bubble = document.createElement('div');
+                bubble.className = `model-bubble type-${node.type}`;
+                bubble.id = `node-${nodeId}`;
+                bubble.style.left = `${node.x}px`;
+                bubble.style.top = `${node.y}px`;
+
+                let fieldHtml = node.fields.map(field => {
+                    let className = 'field-name';
+                    // Check if field is a relation
+                    if (edges.some(e => e.from === nodeId && e.label.includes(field))) {
+                        className = 'field-relation';
+                    }
+                    return `<li><span class="${className}">${field}</span></li>`;
+                }).join('');
+
+                bubble.innerHTML = `
+                    <div class="model-header">${nodeId}</div>
+                    <ul class="field-list">${fieldHtml}</ul>
+                `;
+                diagramContainer.appendChild(bubble);
+                
+                // Add node DOM element to our data object
+                node.element = bubble;
+            });
+
+            // --- 3. RENDER ARROWS ---
+            function drawArrows() {
+                // Clear existing arrows
+                svgLayer.innerHTML = '';
+                
+                const drawnPairs = new Set();
+
+                edges.forEach(edge => {
+                    const fromNode = nodes[edge.from];
+                    const toNode = nodes[edge.to];
+                    
+                    if (!fromNode || !toNode) return;
+
+                    // Avoid drawing duplicate lines for bidirectional relations
+                    const pairKey1 = `${edge.from}-${edge.to}`;
+                    const pairKey2 = `${edge.to}-${edge.from}`;
+                    if (drawnPairs.has(pairKey1) || drawnPairs.has(pairKey2)) {
+                        return;
+                    }
+                    drawnPairs.add(pairKey1);
+
+                    const fromElem = fromNode.element;
+                    const toElem = toNode.element;
+
+                    // Calculate center points based on document position
+                    const fromX = parseFloat(fromElem.style.left) + fromElem.offsetWidth / 2;
+                    const fromY = parseFloat(fromElem.style.top) + fromElem.offsetHeight / 2;
+                    const toX = parseFloat(toElem.style.left) + toElem.offsetWidth / 2;
+                    const toY = parseFloat(toElem.style.top) + toElem.offsetHeight / 2;
+
+                    // Create SVG line
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', fromX);
+                    line.setAttribute('y1', fromY);
+                    line.setAttribute('x2', toX);
+                    line.setAttribute('y2', toY);
+                    line.className = 'arrow-line';
+                    line.dataset.from = edge.from;
+                    line.dataset.to = edge.to;
+                    
+                    svgLayer.appendChild(line);
+                });
+            }
+
+            // --- 4. PANNING & DRAGGING ---
+            let activeBubble = null;
+            let isPanning = false;
+            let offset = { x: 0, y: 0 };
+            let lastPan = { x: 0, y: 0 };
+
+            document.addEventListener('mousedown', (e) => {
+                const bubble = e.target.closest('.model-bubble');
+                
+                if (bubble) {
+                    // --- Start DRAGGING BUBBLE ---
+                    activeBubble = bubble;
+                    activeBubble.classList.add('dragging');
+                    // Use pageX/Y for document-relative coordinates
+                    offset.x = e.pageX - parseFloat(activeBubble.style.left);
+                    offset.y = e.pageY - parseFloat(activeBubble.style.top);
+                } else if (e.target.id === 'diagram-container' || e.target === document.body || e.target === document.documentElement) {
+                    // --- Start PANNING ---
+                    isPanning = true;
+                    document.body.classList.add('panning');
+                    lastPan.x = e.clientX;
+                    lastPan.y = e.clientY;
+                    e.preventDefault(); // Prevent text selection
+                }
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (activeBubble) {
+                    // --- Handle BUBBLE DRAG ---
+                    e.preventDefault();
+                    let newX = e.pageX - offset.x;
+                    let newY = e.pageY - offset.y;
+                    
+                    // Constrain within the canvas
+                    newX = Math.max(0, Math.min(newX, CANVAS_WIDTH - activeBubble.offsetWidth));
+                    newY = Math.max(0, Math.min(newY, CANVAS_HEIGHT - activeBubble.offsetHeight));
+
+                    activeBubble.style.left = `${newX}px`;
+                    activeBubble.style.top = `${newY}px`;
+                    
+                    const nodeId = activeBubble.id.replace('node-', '');
+                    nodes[nodeId].x = newX;
+                    nodes[nodeId].y = newY;
+                    
+                    drawArrows(); // Redraw arrows
+                    applyHighlights(); // Re-apply highlights
+                } else if (isPanning) {
+                    // --- Handle PANNING ---
+                    const deltaX = e.clientX - lastPan.x;
+                    const deltaY = e.clientY - lastPan.y;
+                    
+                    window.scrollBy(-deltaX, -deltaY);
+                    
+                    lastPan.x = e.clientX;
+                    lastPan.y = e.clientY;
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (activeBubble) {
+                    activeBubble.classList.remove('dragging');
+                }
+                if (isPanning) {
+                    document.body.classList.remove('panning');
+                }
+                
+                activeBubble = null;
+                isPanning = false;
+            });
+
+            // --- 5. INTERACTIVITY (HIGHLIGHTING) ---
+            let highlightedNodeId = null;
+
+            diagramContainer.addEventListener('click', (e) => {
+                // Only register click if we aren't dragging or panning
+                if (activeBubble || isPanning) return;
+                
+                const bubble = e.target.closest('.model-bubble');
+                
+                if (bubble) {
+                    const nodeId = bubble.id.replace('node-', '');
+                    
+                    // Toggle off if clicking the same bubble
+                    if (highlightedNodeId === nodeId) {
+                        highlightedNodeId = null;
+                    } else {
+                        highlightedNodeId = nodeId;
+                    }
+                } else {
+                    // Clicked on background
+                    highlightedNodeId = null;
+                }
+                applyHighlights();
+            });
+
+            function applyHighlights() {
+                // Clear all highlights
+                document.querySelectorAll('.highlight, .highlight-secondary').forEach(el => {
+                    el.classList.remove('highlight', 'highlight-secondary');
+                });
+                diagramContainer.classList.remove('dimmed');
+
+                if (!highlightedNodeId) {
+                    // No highlights, just ensure arrows are drawn
+                    drawArrows();
+                    return;
+                }
+
+                diagramContainer.classList.add('dimmed');
+                
+                const relatedNodes = new Set();
+                const relatedEdges = new Set();
+
+                // Find all related edges
+                edges.forEach(edge => {
+                    if (edge.from === highlightedNodeId || edge.to === highlightedNodeId) {
+                        relatedNodes.add(edge.from);
+                        relatedNodes.add(edge.to);
+                        relatedEdges.add(edge);
+                    }
+                });
+
+                // Highlight primary node
+                if(nodes[highlightedNodeId]) {
+                    nodes[highlightedNodeId].element.classList.add('highlight');
+                }
+
+                // Highlight related nodes
+                relatedNodes.forEach(nodeId => {
+                    if (nodeId !== highlightedNodeId && nodes[nodeId]) {
+                        nodes[nodeId].element.classList.add('highlight-secondary');
+                    }
+                });
+
+                // Redraw arrows and highlight related ones
+                drawArrows(); // Draw all arrows first
+                
+                svgLayer.querySelectorAll('.arrow-line').forEach(line => {
+                    const from = line.dataset.from;
+                    const to = line.dataset.to;
+                    
+                    if (from === highlightedNodeId || to === highlightedNodeId) {
+                        line.classList.add('highlight');
+                    } else if (relatedNodes.has(from) && relatedNodes.has(to)) {
+                        // Highlight edges between two secondary nodes
+                        line.classList.add('highlight-secondary');
+                    }
+                });
+            }
+
+
+            // --- Initial Setup ---
+            // Scroll to a central-ish part of the diagram
+            window.scrollTo(800, 300);
+            
+            // Initial drawing of arrows
+            drawArrows();
+        });
+    </script>
+</body>
+</html>
