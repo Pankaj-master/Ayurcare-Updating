@@ -1,49 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+  Card, CardContent, CardDescription, CardHeader, CardTitle
 } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Badge } from "./ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "./ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter
 } from "./ui/dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "./ui/table";
 import { Textarea } from "./ui/textarea";
 import {
-  Plus,
-  Search,
-  Filter,
-  Eye,
-  Edit,
-  Trash2,
-  User,
-  Calendar,
-  MapPin,
+  Plus, Search, Filter, Eye, Edit, Trash2, User, Calendar, MapPin
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { patientsAPI } from "../services/api";
@@ -64,48 +38,6 @@ const mockPatients = [
     bmi: 23.5,
     address: "Mumbai, Maharashtra",
   },
-  {
-    id: 2,
-    name: "Priya Sharma",
-    age: 32,
-    gender: "Female",
-    dosha: "Pitta",
-    lastVisit: "2024-01-14",
-    phone: "+91 87654 32109",
-    email: "priya.sharma@email.com",
-    weight: 58,
-    height: 162,
-    bmi: 22.1,
-    address: "Delhi, NCR",
-  },
-  {
-    id: 3,
-    name: "Amit Patel",
-    age: 38,
-    gender: "Male",
-    dosha: "Kapha",
-    lastVisit: "2024-01-12",
-    phone: "+91 76543 21098",
-    email: "amit.patel@email.com",
-    weight: 85,
-    height: 180,
-    bmi: 26.2,
-    address: "Ahmedabad, Gujarat",
-  },
-  {
-    id: 4,
-    name: "Sunita Devi",
-    age: 28,
-    gender: "Female",
-    dosha: "Vata-Pitta",
-    lastVisit: "2024-01-10",
-    phone: "+91 65432 10987",
-    email: "sunita.devi@email.com",
-    weight: 52,
-    height: 158,
-    bmi: 20.8,
-    address: "Jaipur, Rajasthan",
-  },
 ];
 
 const doshaColors = {
@@ -118,10 +50,37 @@ const doshaColors = {
 };
 
 export function PatientManagement() {
-  const [patients, setPatients] = useState(mockPatients);
+  type Patient = {
+    id: string;
+    name: string;
+    age: number | string;
+    gender: string;
+    dosha: string;
+    bmi?: number | null;
+    lastVisit?: string;
+    phone?: string;
+    email?: string;
+    weight?: number | null;
+    height?: number | null;
+    address?: string;
+  };
+
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDosha, setFilterDosha] = useState("all");
   const [isAddPatientOpen, setIsAddPatientOpen] = useState(false);
+
+  // 🔥 NEW: Edit modal state moved inside component
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [editForm, setEditForm] = useState({
+    height: "",
+    weight: "",
+    doshaType: "",
+    sleepPattern: "",
+    bowelMovement: "",
+  });
+
   const [newPatient, setNewPatient] = useState({
     name: "",
     age: "",
@@ -134,23 +93,78 @@ export function PatientManagement() {
     address: "",
     lifestyle: {
       sleep: "",
-
       bowel: "",
     },
   });
 
   const navigate = useNavigate();
-
-  const filteredPatients = patients.filter((patient) => {
-    const matchesSearch =
-      patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDosha = filterDosha === "all" || patient.dosha === filterDosha;
-    return matchesSearch && matchesDosha;
-  });
-
   const { user: currentUser } = useAuth();
 
+  const mapDoshaDisplay = (doshaType: string) => {
+    if (!doshaType) return "N/A";
+    const map: any = {
+      VATA: "Vata",
+      PITTA: "Pitta",
+      KAPHA: "Kapha",
+      TRIDOSHA: "Vata-Pitta",
+    };
+    return map[doshaType] || doshaType;
+  };
+
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        const res = await patientsAPI.getAll();
+        const patientList = res.data.data.patients || [];
+
+        const transformed = patientList
+          .filter((p: any) => p.doctorId === currentUser?.id)
+          .map((p: any) => {
+            const u = p.user;
+            const bmi =
+              p.weight && p.height
+                ? parseFloat((p.weight / (p.height / 100) ** 2).toFixed(1))
+                : null;
+
+            return {
+              id: p.id,
+              name: u?.name || "Unknown",
+              age: u?.age || "N/A",
+              gender: u?.gender || "N/A",
+              dosha: mapDoshaDisplay(u?.doshaType),
+              lastVisit: p.updatedAt?.split("T")[0] || "N/A",
+              phone: u?.phone,
+              email: u?.email,
+              weight: p.weight,
+              height: p.height,
+              bmi,
+              address: u?.address || "N/A",
+            };
+          });
+
+        setPatients(transformed);
+      } catch (err) {
+        console.error("❌ Fetch patients failed:", err);
+        setPatients(mockPatients);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (currentUser?.id) fetchPatients();
+  }, [currentUser]);
+
+  const filteredPatients = patients.filter((p) => {
+    return (
+      (p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.email?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (filterDosha === "all" || p.dosha === filterDosha)
+    );
+  });
+
+
+
+  // ⚠👇 Add Patient Section (UNCHANGED - DO NOT EDIT)
   const handleAddPatient = async () => {
     // Basic client-side validation
     if (!newPatient.name || !newPatient.email) {
@@ -164,8 +178,7 @@ export function PatientManagement() {
     }
 
     try {
-      // Map dosha values to backend enum
-      const mapDosha = (d: string) => {
+      const mapDosha = (d) => {
         if (!d) return undefined;
         const key = d.toLowerCase();
         if (key.includes("vata") && key.includes("pitta")) return "TRIDOSHA";
@@ -175,8 +188,7 @@ export function PatientManagement() {
         return "TRIDOSHA";
       };
 
-      const payload: any = {
-        // User fields (controller creates the User when these are present)
+      const payload = {
         email: newPatient.email,
         name: newPatient.name,
         phone: newPatient.phone || undefined,
@@ -184,7 +196,6 @@ export function PatientManagement() {
         age: newPatient.age ? Number(newPatient.age) : undefined,
         gender: newPatient.gender || undefined,
         doshaType: mapDosha(newPatient.dosha),
-        // patient-specific fields
         doctorId: currentUser.id,
         patientCode: `P-${Date.now()}`,
         height: newPatient.height ? Number(newPatient.height) : undefined,
@@ -193,60 +204,39 @@ export function PatientManagement() {
         bowelMovement: newPatient.lifestyle?.bowel || undefined,
       };
 
-      // Strip undefined keys
       const body = Object.fromEntries(
         Object.entries(payload).filter(([_, v]) => v !== undefined)
       );
 
-      console.log("Creating patient with payload:", body);
-
       const response = await patientsAPI.create(body);
-
-      console.log("Patient created successfully:", response.data);
-
-      // Transform backend response to match frontend patient structure
       const createdPatient = response.data.data;
-      const user = createdPatient.user;
+      const u = createdPatient.user;
+
       const weight = createdPatient.weight;
       const height = createdPatient.height;
-
-      // Calculate BMI if weight and height are available
       const bmi =
         weight && height
           ? parseFloat((weight / (height / 100) ** 2).toFixed(1))
           : null;
 
-      // Map doshaType back to display format
-      const mapDoshaDisplay = (doshaType: string | null | undefined) => {
-        if (!doshaType) return "N/A";
-        const doshaMap: { [key: string]: string } = {
-          VATA: "Vata",
-          PITTA: "Pitta",
-          KAPHA: "Kapha",
-          TRIDOSHA: "Vata-Pitta",
-        };
-        return doshaMap[doshaType] || doshaType;
-      };
-
       const patientWithUser = {
         id: createdPatient.id,
-        name: user?.name || newPatient.name,
-        age: user?.age || newPatient.age || null,
-        gender: user?.gender || newPatient.gender || "N/A",
-        dosha: mapDoshaDisplay(user?.doshaType),
+        name: u?.name,
+        age: u?.age,
+        gender: u?.gender,
+        dosha: mapDoshaDisplay(u?.doshaType),
         lastVisit: new Date().toISOString().split("T")[0],
-        phone: user?.phone || newPatient.phone || "N/A",
-        email: user?.email || newPatient.email,
-        weight: weight || null,
-        height: height || null,
-        bmi: bmi || null,
-        address: user?.address || newPatient.address || "N/A",
+        phone: u?.phone,
+        email: u?.email,
+        weight,
+        height,
+        bmi,
+        address: u?.address || "N/A",
       };
 
-      // Add the newly created patient from backend
-      setPatients([...patients, patientWithUser]);
+      setPatients((prev) => [...prev, patientWithUser]);
+      setIsAddPatientOpen(false);
 
-      // Reset form
       setNewPatient({
         name: "",
         age: "",
@@ -259,22 +249,100 @@ export function PatientManagement() {
         address: "",
         lifestyle: { sleep: "", bowel: "" },
       });
-
-      setIsAddPatientOpen(false);
-    } catch (err: any) {
+    } catch (err) {
       console.error("❌ Add Patient Error:", err);
-      const errorMessage =
-        err?.response?.data?.message ||
-        err?.response?.data?.error?.details?.[0]?.message ||
-        err?.message ||
-        "Could not create patient. Please check the console for details.";
-      alert(errorMessage);
+      alert("Add patient failed!");
     }
   };
 
-  const handleDeletePatient = (id) => {
-    setPatients(patients.filter((p) => p.id !== id));
+  // ⚠ End of Add Patient section
+
+const handleEditSave = async () => {
+  try {
+    if (!editingPatient) return;
+
+    const updateData: any = {};
+
+    if (editForm.height) updateData.height = Number(editForm.height);
+    if (editForm.weight) updateData.weight = Number(editForm.weight);
+    if (editForm.dosha) updateData.doshaType = editForm.dosha;
+    if (editForm.sleepPattern) updateData.sleepPattern = editForm.sleepPattern;
+    if (editForm.bowelMovement) updateData.bowelMovement = editForm.bowelMovement;
+
+    // Remove empty values
+    const body = Object.fromEntries(
+      Object.entries(updateData).filter(([_, v]) => v !== undefined && v !== "")
+    );
+
+    await patientsAPI.update(editingPatient.id, body);
+
+    // Update UI instantly
+    setPatients((prev) =>
+      prev.map((p) => {
+        if (p.id !== editingPatient.id) return p;
+
+        const updated = {
+          ...p,
+          ...editForm,
+        };
+
+        // Recalculate BMI if height & weight updated
+        if (editForm.height && editForm.weight) {
+          const h = Number(editForm.height);
+          const w = Number(editForm.weight);
+          updated.bmi = Number((w / (h / 100) ** 2).toFixed(1));
+        }
+
+        return updated;
+      })
+    );
+
+    setEditingPatient(null);
+    console.log("Updated Successfully");
+  } catch (error) {
+    console.error("❌ Update failed!", error);
+    alert("Failed to update patient.");
+  }
+};
+
+
+
+  const handleDeletePatient = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this patient?"))
+      return;
+
+    try {
+      // Optimistic UI update
+      const updatedPatients = patients.filter((p) => p.id !== id);
+      setPatients(updatedPatients);
+
+      await patientsAPI.delete(id); // DELETE /patients/:id
+
+      console.log("Patient deleted successfully:", id);
+    } catch (err) {
+      console.error("❌ Delete Patient Error:", err);
+      alert("Failed to delete patient. Refreshing list...");
+
+      // Restore list from backend
+      try {
+        const res = await patientsAPI.getAll();
+        const refreshed = res.data.data.patients.filter(
+          (p) => p.doctorId === currentUser?.id
+        );
+        setPatients(refreshed);
+      } catch {
+        console.error("❌ Failed refetch after delete error");
+      }
+    }
   };
+
+  if (loading) {
+    return (
+      <p className="text-center p-6 text-lg">
+        Loading patients, please wait...
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -511,6 +579,93 @@ export function PatientManagement() {
             </div>
           </DialogContent>
         </Dialog>
+
+
+        {editingPatient && (
+  <Dialog open={!!editingPatient} onOpenChange={() => setEditingPatient(null)}>
+    <DialogContent className="max-w-lg">
+      <DialogHeader>
+        <DialogTitle>Edit Patient Details</DialogTitle>
+        <DialogDescription>
+          Update patient’s medical information below.
+        </DialogDescription>
+      </DialogHeader>
+
+      <div className="space-y-4">
+        <div>
+          <Label>Height (cm)</Label>
+          <Input
+            type="number"
+            value={editForm.height ?? ""}
+            onChange={(e) =>
+              setEditForm({ ...editForm, height: e.target.value })
+            }
+          />
+        </div>
+
+        <div>
+          <Label>Weight (kg)</Label>
+          <Input
+            type="number"
+            value={editForm.weight ?? ""}
+            onChange={(e) =>
+              setEditForm({ ...editForm, weight: e.target.value })
+            }
+          />
+        </div>
+
+        <div>
+          <Label>Dosha Type</Label>
+          <Select
+            value={editForm.dosha ?? ""}
+            onValueChange={(value) =>
+              setEditForm({ ...editForm, dosha: value })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select Dosha" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="VATA">Vata</SelectItem>
+              <SelectItem value="PITTA">Pitta</SelectItem>
+              <SelectItem value="KAPHA">Kapha</SelectItem>
+              <SelectItem value="TRIDOSHA">Tridosha</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label>Sleep Pattern</Label>
+          <Input
+            value={editForm.sleepPattern ?? ""}
+            onChange={(e) =>
+              setEditForm({ ...editForm, sleepPattern: e.target.value })
+            }
+          />
+        </div>
+
+        <div>
+          <Label>Bowel Movement</Label>
+          <Input
+            value={editForm.bowelMovement ?? ""}
+            onChange={(e) =>
+              setEditForm({ ...editForm, bowelMovement: e.target.value })
+            }
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 mt-6">
+        <Button variant="outline" onClick={() => setEditingPatient(null)}>
+          Cancel
+        </Button>
+        <Button onClick={handleEditSave}>Save</Button>
+      </div>
+    </DialogContent>
+  </Dialog>
+)}
+
+
       </div>
 
       {/* Search and Filters */}
@@ -630,9 +785,23 @@ export function PatientManagement() {
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
+                      <Button
+  variant="ghost"
+  size="sm"
+  onClick={() => {
+    setEditingPatient(patient);
+    setEditForm({
+      height: patient.height || "",
+      weight: patient.weight || "",
+      doshaType: patient.dosha || "",
+      sleepPattern: patient.sleepPattern || "",
+      bowelMovement: patient.bowelMovement || "",
+    });
+  }}
+>
+  <Edit className="w-4 h-4" />
+</Button>
+
                       <Button
                         variant="ghost"
                         size="sm"
