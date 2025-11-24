@@ -279,20 +279,28 @@ export function Recipes() {
   const [showSavedOnly, setShowSavedOnly] = useState(false);
 
   const filteredRecipes = mockRecipes.filter((recipe) => {
+    const lowerSearch = searchTerm.toLowerCase();
+
     const matchesSearch =
-      (recipe.name?.toLowerCase().includes(searchTerm.toLowerCase()) ??
-        false) ||
-      (recipe.description?.toLowerCase().includes(searchTerm.toLowerCase()) ??
-        false) ||
-      (recipe.tags?.some((tag) =>
-        tags.toLowerCase().includes(searchTerm.toLowerCase())
-      ) ??
-        false);
+      (recipe.name?.toLowerCase().includes(lowerSearch) ?? false) ||
+      (recipe.description?.toLowerCase().includes(lowerSearch) ?? false) ||
+      (Array.isArray(recipe.tags) &&
+        recipe.tags.some(
+          (tag) =>
+            typeof tag === "string" && tag.toLowerCase().includes(lowerSearch)
+        ));
 
     const matchesCategory =
       selectedCategory === "all" || recipe.category === selectedCategory;
+
     const matchesDosha =
-      selectedDosha === "all" || recipe.dosha.includes(selectedDosha);
+      selectedDosha === "all" ||
+      recipe.dosha?.some(
+        (d) =>
+          typeof d === "string" &&
+          d.toLowerCase() === selectedDosha.toLowerCase()
+      );
+
     const matchesSaved = !showSavedOnly || recipe.saved;
 
     return matchesSearch && matchesCategory && matchesDosha && matchesSaved;
