@@ -46,3 +46,7 @@ export const registerSchema = Joi.object({
   medications: Joi.string().optional()
 });
 
+export const changePasswordSchema = Joi.object({
+  currentPassword: Joi.string().min(6).required(),
+  newPassword: Joi.string().min(6).required(),
+});

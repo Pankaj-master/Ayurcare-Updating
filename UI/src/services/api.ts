@@ -82,6 +82,8 @@ export const authAPI = {
       }
     );
   },
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    api.post(`/auth/change-password`, data),
 };
 
 // Users API

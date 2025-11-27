@@ -271,4 +271,56 @@ export class AuthController {
       { expiresIn: '7d' }
     );
   }
+
+  async changePassword(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.userId; // from token middleware
+      const { currentPassword, newPassword } = req.body;
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId }
+      });
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: "User not found"
+        });
+        return;
+      }
+
+      const isCorrect = await bcrypt.compare(currentPassword, user.password);
+      if (!isCorrect) {
+        res.status(400).json({
+          success: false,
+          message: "Wrong current password"
+        });
+        return;
+      }
+
+      const hashed = await bcrypt.hash(newPassword, 10);
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { password: hashed }
+      });
+
+      const response: ApiResponse = {
+        success: true,
+        message: "Password changed successfully"
+      };
+
+      res.json(response);
+      return;
+
+    } catch (error) {
+      const response: ApiResponse = {
+        success: false,
+        message: "Error changing password",
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+      res.status(500).json(response);
+      return;
+    }
+  }
 }
