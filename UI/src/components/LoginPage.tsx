@@ -137,8 +137,8 @@ export function LoginPage() {
 
   // --- OAuth login (Cognito Hosted UI) ---
   const handleOAuthLogin = () => {
-    // Use relative path so Vite proxy forwards to backend
-    window.location.href = "/api/auth/oauth/login";
+    const base = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+    window.location.href = `${base}/auth/oauth/login`;
   };
 
   return (

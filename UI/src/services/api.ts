@@ -9,6 +9,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
 // Request interceptor to add auth token
@@ -36,20 +37,19 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = localStorage.getItem("refreshToken");
-        if (refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-            refreshToken,
-          });
+        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+          refreshToken,
+        }, { withCredentials: true });
 
-          const { accessToken } = response.data.data;
+        const accessToken = response?.data?.data?.accessToken;
+        if (accessToken) {
           localStorage.setItem("accessToken", accessToken);
-
-          // Retry the original request with new token
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return api(originalRequest);
+        } else {
+          delete originalRequest.headers.Authorization;
         }
+        return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, redirect to login
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         window.location.href = "/login";

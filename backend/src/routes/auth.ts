@@ -10,6 +10,11 @@ import {
   refreshTokens,
   revokeToken,
 } from "../utils/cognito";
+import { COGNITO_ENABLED } from "../utils/env";
+import jwt from "jsonwebtoken";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 const router = Router();
 const authController = new AuthController();
@@ -28,6 +33,11 @@ router.post(
 
 // OAuth - redirect to Cognito Hosted UI (stateless)
 router.get("/oauth/login", (req: Request, res: Response): void => {
+  if (!COGNITO_ENABLED) {
+    const redirectTo = process.env.POST_AUTH_REDIRECT || "/";
+    res.redirect(`${redirectTo}?oauth_error=cognito_not_configured`);
+    return;
+  }
   const state = typeof req.query.state === "string" ? req.query.state : "";
   const url = buildAuthorizeUrl({ state });
   res.redirect(url);
@@ -97,8 +107,10 @@ router.post(
       const refreshToken =
         typeof req.cookies?.refresh_token === "string"
           ? req.cookies.refresh_token
-          : typeof req.body?.refresh_token === "string"
-          ? req.body.refresh_token
+          : typeof (req.body as any)?.refresh_token === "string"
+          ? (req.body as any).refresh_token
+          : typeof (req.body as any)?.refreshToken === "string"
+          ? (req.body as any).refreshToken
           : "";
 
       if (!refreshToken) {
@@ -108,29 +120,50 @@ router.post(
         return;
       }
 
-      const tokens: any = await refreshTokens(refreshToken);
+      if (COGNITO_ENABLED) {
+        const tokens: any = await refreshTokens(refreshToken);
 
-      const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax" as const,
-        maxAge:
-          typeof tokens.expires_in === "number"
-            ? tokens.expires_in * 1000
-            : 3600 * 1000,
-      };
-
-      if (tokens.id_token) res.cookie("id_token", tokens.id_token, cookieOptions);
-      if (tokens.access_token)
-        res.cookie("access_token", tokens.access_token, cookieOptions);
-      if (tokens.refresh_token)
-        res.cookie("refresh_token", tokens.refresh_token, {
+        const cookieOptions = {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
-        });
+          sameSite: "lax" as const,
+          maxAge:
+            typeof tokens.expires_in === "number"
+              ? tokens.expires_in * 1000
+              : 3600 * 1000,
+        };
 
-      res.json({ success: true });
-      return;
+        if (tokens.id_token) res.cookie("id_token", tokens.id_token, cookieOptions);
+        if (tokens.access_token)
+          res.cookie("access_token", tokens.access_token, cookieOptions);
+        if (tokens.refresh_token)
+          res.cookie("refresh_token", tokens.refresh_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+          });
+
+        res.json({ success: true });
+        return;
+      }
+
+      try {
+        const decoded: any = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string);
+        const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+        if (!user) {
+          res.status(401).json({ success: false, message: "User not found" });
+          return;
+        }
+        const accessToken = jwt.sign(
+          { userId: user.id, email: user.email, role: user.role },
+          process.env.JWT_SECRET as string,
+          { expiresIn: "30m" }
+        );
+        res.json({ success: true, message: "Token refreshed successfully", data: { accessToken } });
+        return;
+      } catch (e) {
+        res.status(500).json({ success: false, message: "refresh_failed", details: String(e) });
+        return;
+      }
     } catch (err: any) {
       console.error("Refresh token error:", err?.response ?? err?.message ?? err);
       res

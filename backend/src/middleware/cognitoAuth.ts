@@ -9,12 +9,16 @@ const verifier = CognitoJwtVerifier.create({
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
     const h = req.headers.authorization;
-    if (!h || !h.startsWith("Bearer ")) return res.status(401).json({ error: "missing token" });
+    if (!h || !h.startsWith("Bearer ")) {
+      res.status(401).json({ error: "missing token" });
+      return;
+    }
     const token = h.split(" ")[1];
     const payload = await verifier.verify(token);
     (req as any).user = payload;
     next();
   } catch (err) {
-    return res.status(401).json({ error: "invalid token", details: (err as Error).message });
+    res.status(401).json({ error: "invalid token", details: (err as Error).message });
+    return;
   }
 }

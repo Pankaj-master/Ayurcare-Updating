@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import { CognitoJwtVerifier } from "aws-jwt-verify";
-import { COGNITO_USER_POOL_ID, COGNITO_APP_CLIENT_ID } from "../utils/env";
+import jwt from "jsonwebtoken";
+import { COGNITO_USER_POOL_ID, COGNITO_APP_CLIENT_ID, COGNITO_ENABLED } from "../utils/env";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -13,17 +14,21 @@ declare global {
   }
 }
 
-const accessVerifier = CognitoJwtVerifier.create({
-  userPoolId: COGNITO_USER_POOL_ID,
-  clientId: COGNITO_APP_CLIENT_ID,
-  tokenUse: "access",
-});
+const accessVerifier = COGNITO_ENABLED
+  ? CognitoJwtVerifier.create({
+      userPoolId: COGNITO_USER_POOL_ID,
+      clientId: COGNITO_APP_CLIENT_ID,
+      tokenUse: "access",
+    })
+  : null;
 
-const idVerifier = CognitoJwtVerifier.create({
-  userPoolId: COGNITO_USER_POOL_ID,
-  clientId: COGNITO_APP_CLIENT_ID,
-  tokenUse: "id",
-});
+const idVerifier = COGNITO_ENABLED
+  ? CognitoJwtVerifier.create({
+      userPoolId: COGNITO_USER_POOL_ID,
+      clientId: COGNITO_APP_CLIENT_ID,
+      tokenUse: "id",
+    })
+  : null;
 
 function extractToken(req: Request): string | null {
   const authHeader = req.headers.authorization;
@@ -52,14 +57,24 @@ export const authenticateToken = async (
       return;
     }
 
-    let decoded: any;
+    let decoded: any = null;
 
-    try {
-      decoded = await accessVerifier.verify(token);
-    } catch {
+    if (COGNITO_ENABLED && accessVerifier && idVerifier) {
       try {
-        decoded = await idVerifier.verify(token);
-      } catch (err) {
+        decoded = await accessVerifier.verify(token);
+      } catch {
+        try {
+          decoded = await idVerifier.verify(token);
+        } catch {
+          // fall through to local JWT verification
+        }
+      }
+    }
+
+    if (!decoded) {
+      try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+      } catch {
         res.status(401).json({
           success: false,
           message: "Invalid or expired token",
@@ -83,7 +98,7 @@ export const authenticateToken = async (
       return;
     }
 
-    req.user = user;
+    req.user = { userId: user.id, email: user.email, role: user.role };
     next();
   } catch (error) {
     res.status(401).json({

@@ -9,11 +9,9 @@ async function main() {
   // Create sample users
   const hashedPassword = await bcrypt.hash('password123', 12);
 
-  // Create Doctor (idempotent upsert)
-  const doctor = await prisma.user.upsert({
-    where: { email: 'doctor@ayurvedic.com' },
-    update: {},
-    create: {
+  // Create Doctor
+  const doctor = await prisma.user.create({
+    data: {
       email: 'doctor@ayurvedic.com',
       name: 'Dr. Sarah Johnson',
       password: hashedPassword,
@@ -27,11 +25,9 @@ async function main() {
     }
   });
 
-  // Create Patient (idempotent upsert)
-  const patient = await prisma.user.upsert({
-    where: { email: 'patient@example.com' },
-    update: {},
-    create: {
+  // Create Patient
+  const patient = await prisma.user.create({
+    data: {
       email: 'patient@example.com',
       name: 'Priya Sharma',
       password: hashedPassword,
@@ -48,11 +44,9 @@ async function main() {
     }
   });
 
-  // Create additional Doctor (idempotent upsert)
-  const doctor2 = await prisma.user.upsert({
-    where: { email: 'dr.kumar@ayurvedic.com' },
-    update: {},
-    create: {
+  // Create additional Doctor
+  const doctor2 = await prisma.user.create({
+    data: {
       email: 'dr.kumar@ayurvedic.com',
       name: 'Dr. Rajesh Kumar',
       password: hashedPassword,
@@ -66,11 +60,9 @@ async function main() {
     }
   });
 
-  // Create additional Patient (idempotent upsert)
-  const patient2 = await prisma.user.upsert({
-    where: { email: 'john.doe@example.com' },
-    update: {},
-    create: {
+  // Create additional Patient
+  const patient2 = await prisma.user.create({
+    data: {
       email: 'john.doe@example.com',
       name: 'John Doe',
       password: hashedPassword,
