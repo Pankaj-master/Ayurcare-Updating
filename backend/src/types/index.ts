@@ -116,14 +116,6 @@ export interface DietPlanItemRequest {
   time?: string;
 }
 
-export interface AppointmentRequest {
-  doctorId: string;
-  patientId: string;
-  date: string;
-  time: string;
-  duration?: number;
-  notes?: string;
-}
 
 export interface ChatMessageRequest {
   receiverId?: string;

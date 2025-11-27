@@ -330,32 +330,6 @@ async function main() {
     })
   ]);
 
-  // Create sample appointments
-  await Promise.all([
-    prisma.appointment.create({
-      data: {
-        doctorId: doctor.id,
-        patientId: patient.id,
-        date: new Date('2024-01-15'),
-        time: '10:00',
-        duration: 60,
-        status: 'scheduled',
-        notes: 'Initial consultation for Pitta imbalance'
-      }
-    }),
-    prisma.appointment.create({
-      data: {
-        doctorId: doctor2.id,
-        patientId: patient2.id,
-        date: new Date('2024-01-20'),
-        time: '14:00',
-        duration: 45,
-        status: 'scheduled',
-        notes: 'Follow-up consultation for Vata imbalance'
-      }
-    })
-  ]);
-
   // Create sample health records
   await Promise.all([
     prisma.healthRecord.create({
@@ -456,7 +430,6 @@ async function main() {
   console.log('🍚 Foods created:', foods.length);
   console.log('👨‍🍳 Recipe created:', recipe.name);
   console.log('📋 Diet plan created:', dietPlan.name);
-  console.log('📅 Appointments created: 2');
   console.log('📊 Health records created: 2');
   console.log('⏰ Reminders created: 3');
   console.log('💬 Chat messages created: 3');

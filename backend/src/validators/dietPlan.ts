@@ -3,6 +3,7 @@ import Joi from 'joi';
 export const createDietPlanSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
   description: Joi.string().optional(),
+  doctorId: Joi.string().required(),
   patientId: Joi.string().optional(),
   doshaType: Joi.string().valid('VATA', 'PITTA', 'KAPHA', 'TRIDOSHA').optional(),
   duration: Joi.number().integer().min(1).optional(),

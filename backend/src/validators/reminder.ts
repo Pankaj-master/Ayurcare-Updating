@@ -3,6 +3,7 @@ import Joi from 'joi';
 export const createReminderSchema = Joi.object({
   title: Joi.string().min(2).max(100).required(),
   message: Joi.string().min(5).max(500).required(),
+  isActive: Joi.boolean().optional(),
   date: Joi.date().iso().required(),
   time: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).required()
 });

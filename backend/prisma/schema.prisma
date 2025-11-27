@@ -72,8 +72,6 @@ model User {
   // Relations
   doctorPatients     Patient[]      @relation("DoctorPatients")       // doctor → patients
   patientProfile     Patient?       @relation("UserPatientProfile")   // user → patient profile
-  patientAppointments Appointment[] @relation("PatientAppointments")
-  doctorAppointments  Appointment[] @relation("DoctorAppointments")
   createdDietPlans    DietPlan[]    @relation("CreatedDietPlans")
   patientDietPlans    DietPlan[]    @relation("PatientDietPlans")
   sentMessages        ChatMessage[] @relation("SentMessages")
@@ -208,25 +206,6 @@ model DietPlanItem {
   recipe   Recipe?  @relation(fields: [recipeId], references: [id])
 
   @@map("diet_plan_items")
-}
-
-model Appointment {
-  id        String    @id @default(cuid())
-  doctorId  String
-  patientId String
-  date      DateTime
-  time      String
-  duration  Int? // in minutes
-  status    String    @default("scheduled") // scheduled, completed, cancelled
-  notes     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  // Relations
-  doctor  User @relation("DoctorAppointments", fields: [doctorId], references: [id])
-  patient User @relation("PatientAppointments", fields: [patientId], references: [id])
-
-  @@map("appointments")
 }
 
 model HealthRecord {

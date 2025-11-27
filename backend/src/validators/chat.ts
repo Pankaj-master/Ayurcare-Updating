@@ -14,5 +14,9 @@ export const paginationSchema = Joi.object({
 });
 
 export const idSchema = Joi.object({
+  userId: Joi.string().required()
+});
+
+export const messageIdSchema = Joi.object({
   id: Joi.string().required()
 });
