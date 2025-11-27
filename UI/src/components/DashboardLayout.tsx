@@ -32,77 +32,75 @@ import {
 import { Badge } from "./ui/badge";
 import { useAuth } from "../contexts/AuthContext";
 import LanguageSwitcher from '../components/ui/languageSwitcher';
+import { useTranslation } from "react-i18next";
 
 
-const doctorNavigationItems = [
+// ----------------------
+// UPDATED NAV ITEMS
+// ----------------------
+
+const doctorNavigationItems = (t: any) => [
   {
     id: "dashboard",
-    label: "Dashboard",
+    label: t("sidebar.dashboard"),
     icon: LayoutDashboard,
     path: "/dashboard",
   },
-  { id: "patients", label: "Patients", icon: Users, path: "/patients" },
-  {
-    id: "collections",
-    label: "Collections",
-    icon: Bookmark,
-    path: "/collections",
-  },
-  { id: "recipes", label: "Recipes", icon: ChefHat, path: "/recipes" },
+  { id: "patients", label: t("sidebar.patients"), icon: Users, path: "/patients" },
   {
     id: "diet-chart",
-    label: "Diet Chart",
+    label: t("sidebar.dietChart"),
     icon: PieChart,
     path: "/diet-chart",
   },
   {
     id: "auto-generate",
-    label: "Auto Generate Diet",
+    label: t("sidebar.autoGenerate"),
     icon: Wand2,
     path: "/auto-generate",
   },
   {
     id: "food-database",
-    label: "Food Database",
+    label: t("sidebar.foodDatabase"),
     icon: Database,
     path: "/food-database",
   },
-  { id: "reports", label: "Reports", icon: BarChart3, path: "/reports" },
-  { id: "settings", label: "Settings", icon: Settings, path: "/settings" },
+  { id: "chat", label: t("sidebar.chat"), icon: MessageCircle, path: "/chat-doctor" },
+  { id: "settings", label: t("sidebar.settings"), icon: Settings, path: "/settings" },
 ];
 
-const patientNavigationItems = [
+const patientNavigationItems = (t: any) => [
   {
     id: "dashboard",
-    label: "Dashboard",
+    label: t("sidebar.dashboard"),
     icon: LayoutDashboard,
     path: "/dashboard",
   },
   {
     id: "diet-history",
-    label: "Diet History",
+    label: t("sidebar.dietHistory"),
     icon: History,
     path: "/diet-history",
   },
-  { id: "chat", label: "Chat with Doctor", icon: MessageCircle, path: "/chat" },
-  { id: "reports", label: "Reports", icon: BarChart3, path: "/reports" },
-  { id: "reminders", label: "Reminders", icon: Clock, path: "/reminders" },
-  { id: "settings", label: "Settings", icon: Settings, path: "/settings" },
-  { id: "patient-settings", label: "Patient Settings", icon: Settings, path: "/patient-settings" },
+  { id: "chat", label: t("sidebar.chatWithDoctor"), icon: MessageCircle, path: "/chat" },
+  { id: "reports", label: t("sidebar.reports"), icon: BarChart3, path: "/reports" },
+  { id: "reminders", label: t("sidebar.reminders"), icon: Clock, path: "/reminders" },
+  { id: "patient-settings", label: t("sidebar.patientSettings"), icon: Settings, path: "/patient-settings" },
 ];
+
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
 
   const handleNavigation = (path: string) => {
     navigate(path);
   };
 
-  // Get navigation items based on user role
   const navigationItems =
-    user?.role === "PATIENT" ? patientNavigationItems : doctorNavigationItems;
+    user?.role === "PATIENT" ? patientNavigationItems(t) : doctorNavigationItems(t);
 
   return (
     <div className="flex h-screen bg-background">
@@ -115,8 +113,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <Leaf className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-lg text-primary">AyurDiet Pro</h1>
-              <p className="text-xs text-muted-foreground">Diet Management</p>
+              <h1 className="text-lg text-primary">Ayurcare</h1>
+              <p className="text-xs text-muted-foreground">Ayurvedic Diet Management System</p>
             </div>
           </div>
         </div>
@@ -175,7 +173,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search patients, foods, plans..."
+                placeholder={t("topbar.searchPlaceholder")}
                 className="pl-10 w-full"
               />
             </div>
@@ -214,15 +212,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   </div>
                 </Button>
               </DropdownMenuTrigger>
+
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={() => navigate("/settings")}>
                   <Settings className="w-4 h-4 mr-2" />
-                  Settings
+                  {t("userMenu.settings")}
                 </DropdownMenuItem>
+
                 <DropdownMenuSeparator />
+
                 <DropdownMenuItem onClick={logout} className="text-destructive">
                   <LogOut className="w-4 h-4 mr-2" />
-                  Logout
+                  {t("userMenu.logout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

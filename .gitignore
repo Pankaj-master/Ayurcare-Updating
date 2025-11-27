@@ -6,3 +6,4 @@ UI/src/components/.DS_Store
 UI/src/components/.vscode/
 UI/.env
 backend/.env
+backend/prisma/migrations/

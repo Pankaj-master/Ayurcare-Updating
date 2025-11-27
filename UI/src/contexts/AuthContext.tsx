@@ -1,11 +1,17 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { authAPI } from '../services/api';
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  ReactNode,
+} from "react";
+import { authAPI } from "../services/api";
 
 interface User {
   id: string;
   name: string;
   email: string;
-  role: 'DOCTOR' | 'PATIENT';
+  role: "DOCTOR" | "PATIENT";
   avatar?: string;
   phone?: string;
   address?: string;
@@ -28,19 +34,23 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  login: (credentials: { email: string; password: string; role: string }) => Promise<void>;
+  login: (credentials: {
+    email: string;
+    password: string;
+    role: string;
+  }) => Promise<void>;
   register: (userData: any) => Promise<void>;
   logout: () => void;
   clearError: () => void;
 }
 
 type AuthAction =
-  | { type: 'AUTH_START' }
-  | { type: 'AUTH_SUCCESS'; payload: User }
-  | { type: 'AUTH_FAILURE'; payload: string }
-  | { type: 'LOGOUT' }
-  | { type: 'CLEAR_ERROR' }
-  | { type: 'SET_LOADING'; payload: boolean };
+  | { type: "AUTH_START" }
+  | { type: "AUTH_SUCCESS"; payload: User }
+  | { type: "AUTH_FAILURE"; payload: string }
+  | { type: "LOGOUT" }
+  | { type: "CLEAR_ERROR" }
+  | { type: "SET_LOADING"; payload: boolean };
 
 const initialState: AuthState = {
   user: null,
@@ -51,13 +61,13 @@ const initialState: AuthState = {
 
 const authReducer = (state: AuthState, action: AuthAction): AuthState => {
   switch (action.type) {
-    case 'AUTH_START':
+    case "AUTH_START":
       return {
         ...state,
         isLoading: true,
         error: null,
       };
-    case 'AUTH_SUCCESS':
+    case "AUTH_SUCCESS":
       return {
         ...state,
         user: action.payload,
@@ -65,7 +75,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         isLoading: false,
         error: null,
       };
-    case 'AUTH_FAILURE':
+    case "AUTH_FAILURE":
       return {
         ...state,
         user: null,
@@ -73,7 +83,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         isLoading: false,
         error: action.payload,
       };
-    case 'LOGOUT':
+    case "LOGOUT":
       return {
         ...state,
         user: null,
@@ -81,12 +91,12 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         isLoading: false,
         error: null,
       };
-    case 'CLEAR_ERROR':
+    case "CLEAR_ERROR":
       return {
         ...state,
         error: null,
       };
-    case 'SET_LOADING':
+    case "SET_LOADING":
       return {
         ...state,
         isLoading: action.payload,
@@ -101,7 +111,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -116,16 +126,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Check for existing token on mount
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem("accessToken");
       if (token) {
         try {
-          dispatch({ type: 'AUTH_START' });
+          dispatch({ type: "AUTH_START" });
           const response = await authAPI.getMe();
-          dispatch({ type: 'AUTH_SUCCESS', payload: response.data.data });
+          dispatch({ type: "AUTH_SUCCESS", payload: response.data.data });
         } catch (error) {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          dispatch({ type: 'AUTH_FAILURE', payload: 'Session expired' });
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          dispatch({ type: "AUTH_FAILURE", payload: "Session expired" });
         }
       }
     };
@@ -133,52 +143,60 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuth();
   }, []);
 
-  const login = async (credentials: { email: string; password: string; role: string }) => {
+  const login = async (credentials: {
+    email: string;
+    password: string;
+    role: string;
+  }) => {
     try {
-      dispatch({ type: 'AUTH_START' });
+      dispatch({ type: "AUTH_START" });
       const response = await authAPI.login(credentials);
       const { accessToken, refreshToken, ...userData } = response.data.data;
-      
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      
-      dispatch({ type: 'AUTH_SUCCESS', payload: userData });
+
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+
+      dispatch({ type: "AUTH_SUCCESS", payload: userData });
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Login failed';
-      dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+      const errorMessage = error.response?.data?.message || "Login failed";
+      dispatch({ type: "AUTH_FAILURE", payload: errorMessage });
       throw error;
     }
   };
 
   const register = async (userData: any) => {
     try {
-      dispatch({ type: 'AUTH_START' });
+      dispatch({ type: "AUTH_START" });
       const response = await authAPI.register(userData);
       const { accessToken, refreshToken, ...user } = response.data.data;
-      
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      
-      dispatch({ type: 'AUTH_SUCCESS', payload: user });
+
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+
+      dispatch({ type: "AUTH_SUCCESS", payload: user });
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Registration failed';
-      dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+      const errorMessage =
+        error.response?.data?.message || "Registration failed";
+      dispatch({ type: "AUTH_FAILURE", payload: errorMessage });
       throw error;
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    dispatch({ type: 'LOGOUT' });
-    // Call logout API
-    authAPI.logout().catch(() => {
-      // Ignore errors on logout
+    const token = localStorage.getItem("accessToken");
+
+    // Call logout API first WITH token
+    authAPI.logout(token).finally(() => {
+      // Now safely clear tokens
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+
+      dispatch({ type: "LOGOUT" });
     });
   };
 
   const clearError = () => {
-    dispatch({ type: 'CLEAR_ERROR' });
+    dispatch({ type: "CLEAR_ERROR" });
   };
 
   const value: AuthContextType = {
@@ -191,6 +209,3 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
-
-

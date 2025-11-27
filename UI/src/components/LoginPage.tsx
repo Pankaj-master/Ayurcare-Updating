@@ -144,11 +144,11 @@ export function LoginPage() {
             <Leaf className="w-8 h-8 text-primary" />
           </div>
           <div>
-            <CardTitle className="text-2xl text-primary">AyurDiet Pro</CardTitle>
+            <CardTitle className="text-2xl text-primary">Ayurcare</CardTitle>
             <CardDescription className="text-muted-foreground">
               {regStep === 2 
                 ? `Complete your ${registerData.role.toLowerCase()} profile` 
-                : 'Modern Ayurvedic Diet Management System'}
+                : 'Ancient Root, Smart Tech, Kare Connect'}
             </CardDescription>
           </div>
         </CardHeader>

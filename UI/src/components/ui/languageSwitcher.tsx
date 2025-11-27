@@ -17,6 +17,8 @@ const LanguageSwitcher: React.FC = () => {
     >
       <option value="en">EN</option>
       <option value="hi">हिं</option>
+      <option value="mr">मराठी</option>
+      <option value="or">ଓଡ଼ିଆ</option>
     </select>
   );
 };

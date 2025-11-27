@@ -20,6 +20,9 @@ import {
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
+import { useTranslation } from "react-i18next";
+
+
 
 const mockReminders = [
   {
@@ -118,6 +121,9 @@ const typeColors = {
 };
 
 export function Reminders() {
+
+  const { t } = useTranslation();
+
   const [reminders, setReminders] = useState(mockReminders);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingReminder, setEditingReminder] = useState(null);
@@ -232,246 +238,260 @@ export function Reminders() {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl text-foreground">Reminders</h1>
-          <p className="text-muted-foreground">Set and manage reminders for meals, medicines, and activities</p>
-        </div>
-        <Button 
-          onClick={() => setShowAddForm(true)}
-          className="bg-primary hover:bg-primary/90"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Reminder
-        </Button>
+return (
+  <div className="space-y-6">
+
+    {/* Header */}
+    <div className="flex justify-between items-center">
+      <div>
+        <h1 className="text-3xl text-foreground">{t("reminders.title")}</h1>
+        <p className="text-muted-foreground">{t("reminders.subtitle")}</p>
+      </div>
+      <Button 
+        onClick={() => setShowAddForm(true)}
+        className="bg-primary hover:bg-primary/90"
+      >
+        <Plus className="w-4 h-4 mr-2" />
+        {t("reminders.addReminder")}
+      </Button>
+    </div>
+
+    {/* Filters */}
+    <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+      <div className="flex gap-4">
+        <Select value={filterType} onValueChange={setFilterType}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder={t("reminders.filterPlaceholder")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t("reminders.filters.all")}</SelectItem>
+            <SelectItem value="active">{t("reminders.filters.active")}</SelectItem>
+            <SelectItem value="inactive">{t("reminders.filters.inactive")}</SelectItem>
+            <SelectItem value="meal">{t("reminders.filters.meal")}</SelectItem>
+            <SelectItem value="medicine">{t("reminders.filters.medicine")}</SelectItem>
+            <SelectItem value="activity">{t("reminders.filters.activity")}</SelectItem>
+            <SelectItem value="hydration">{t("reminders.filters.hydration")}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="flex gap-4">
-          <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filter reminders" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Reminders</SelectItem>
-              <SelectItem value="active">Active Only</SelectItem>
-              <SelectItem value="inactive">Inactive Only</SelectItem>
-              <SelectItem value="meal">Meals</SelectItem>
-              <SelectItem value="medicine">Medicine</SelectItem>
-              <SelectItem value="activity">Activities</SelectItem>
-              <SelectItem value="hydration">Hydration</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Summary Stats */}
+      <div className="flex items-center space-x-6 text-sm">
+        <div className="text-center">
+          <p className="text-muted-foreground">{t("reminders.total")}</p>
+          <p className="text-xl">{reminders.length}</p>
         </div>
-
-        {/* Summary Stats */}
-        <div className="flex items-center space-x-6 text-sm">
-          <div className="text-center">
-            <p className="text-muted-foreground">Total</p>
-            <p className="text-xl">{reminders.length}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-muted-foreground">Active</p>
-            <p className="text-xl text-green-600">
-              {reminders.filter(r => r.isActive).length}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-muted-foreground">Today</p>
-            <p className="text-xl text-blue-600">
-              {reminders.filter(r => r.isActive && r.frequency === 'daily').length}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Add/Edit Form */}
-      {showAddForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {editingReminder ? 'Edit Reminder' : 'Add New Reminder'}
-            </CardTitle>
-            <CardDescription>
-              Create a reminder to help you stay on track with your diet plan
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  placeholder="e.g., Morning Tea"
-                  value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="time">Time</Label>
-                <Input
-                  id="time"
-                  type="time"
-                  value={formData.time}
-                  onChange={(e) => setFormData({...formData, time: e.target.value})}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="type">Type</Label>
-                <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {reminderTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="frequency">Frequency</Label>
-                <Select value={formData.frequency} onValueChange={(value) => setFormData({...formData, frequency: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {frequencyOptions.map((freq) => (
-                      <SelectItem key={freq.value} value={freq.value}>
-                        {freq.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
-              <Textarea
-                id="description"
-                placeholder="Add more details about this reminder..."
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                rows={2}
-              />
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="active"
-                checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData({...formData, isActive: checked})}
-              />
-              <Label htmlFor="active">Active</Label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button onClick={saveReminder} className="bg-primary hover:bg-primary/90">
-                {editingReminder ? 'Update' : 'Save'} Reminder
-              </Button>
-              <Button onClick={resetForm} variant="outline">
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Reminders List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredReminders.map((reminder) => {
-          const TypeIcon = getTypeIcon(reminder.type);
-          
-          return (
-            <Card key={reminder.id} className={`hover:shadow-md transition-shadow ${!reminder.isActive ? 'opacity-60' : ''}`}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <TypeIcon className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{reminder.title}</CardTitle>
-                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        <span>{formatTime(reminder.time)}</span>
-                        <Badge className={`text-xs ${typeColors[reminder.type]}`}>
-                          {reminder.type}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={reminder.isActive}
-                    onCheckedChange={() => toggleReminder(reminder.id)}
-                  />
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="space-y-3">
-                  {reminder.description && (
-                    <p className="text-sm text-muted-foreground">{reminder.description}</p>
-                  )}
-                  
-                  <div className="flex items-center justify-between text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Frequency: </span>
-                      <span className="capitalize">{reminder.frequency}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Next: </span>
-                      <span>{getNextTriggerTime(reminder)}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => editReminder(reminder)}
-                    >
-                      <Edit className="w-3 h-3 mr-1" />
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => deleteReminder(reminder.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="w-3 h-3 mr-1" />
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {filteredReminders.length === 0 && (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-            <Bell className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <h3 className="text-lg text-muted-foreground mb-2">No reminders found</h3>
-          <p className="text-sm text-muted-foreground">
-            Create your first reminder to stay on track with your diet plan
+        <div className="text-center">
+          <p className="text-muted-foreground">{t("reminders.active")}</p>
+          <p className="text-xl text-green-600">
+            {reminders.filter(r => r.isActive).length}
           </p>
         </div>
-      )}
+        <div className="text-center">
+          <p className="text-muted-foreground">{t("reminders.today")}</p>
+          <p className="text-xl text-blue-600">
+            {reminders.filter(r => r.isActive && r.frequency === 'daily').length}
+          </p>
+        </div>
+      </div>
     </div>
-  );
+
+    {/* Add/Edit Form */}
+    {showAddForm && (
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {editingReminder ? t("reminders.editReminder") : t("reminders.addNewReminder")}
+          </CardTitle>
+          <CardDescription>
+            {t("reminders.formDescription")}
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <div className="space-y-2">
+              <Label htmlFor="title">{t("reminders.form.title")}</Label>
+              <Input
+                id="title"
+                placeholder={t("reminders.form.titlePlaceholder")}
+                value={formData.title}
+                onChange={(e) => setFormData({...formData, title: e.target.value})}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="time">{t("reminders.form.time")}</Label>
+              <Input
+                id="time"
+                type="time"
+                value={formData.time}
+                onChange={(e) => setFormData({...formData, time: e.target.value})}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="type">{t("reminders.form.type")}</Label>
+              <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("reminders.form.type")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {reminderTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {t(`reminders.types.${type.value}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="frequency">{t("reminders.form.frequency")}</Label>
+              <Select value={formData.frequency} onValueChange={(value) => setFormData({...formData, frequency: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {frequencyOptions.map((freq) => (
+                    <SelectItem key={freq.value} value={freq.value}>
+                      {t(`reminders.frequency.${freq.value}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">{t("reminders.form.description")}</Label>
+            <Textarea
+              id="description"
+              placeholder={t("reminders.form.descriptionPlaceholder")}
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              rows={2}
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="active"
+              checked={formData.isActive}
+              onCheckedChange={(checked) => setFormData({...formData, isActive: checked})}
+            />
+            <Label htmlFor="active">{t("reminders.form.active")}</Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Button onClick={saveReminder} className="bg-primary hover:bg-primary/90">
+              {editingReminder ? t("reminders.update") : t("reminders.save")}
+            </Button>
+            <Button onClick={resetForm} variant="outline">
+              {t("common.cancel")}
+            </Button>
+          </div>
+
+        </CardContent>
+      </Card>
+    )}
+
+    {/* Reminders List */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {filteredReminders.map((reminder) => {
+        const TypeIcon = getTypeIcon(reminder.type);
+
+        return (
+          <Card key={reminder.id} className={`hover:shadow-md transition-shadow ${!reminder.isActive ? 'opacity-60' : ''}`}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <TypeIcon className="w-5 h-5 text-primary" />
+                  </div>
+
+                  <div>
+                    <CardTitle className="text-lg">{reminder.title}</CardTitle>
+                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                      <Clock className="w-3 h-3" />
+                      <span>{formatTime(reminder.time)}</span>
+                      <Badge className={`text-xs ${typeColors[reminder.type]}`}>
+                        {t(`reminders.types.${reminder.type}`)}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <Switch
+                  checked={reminder.isActive}
+                  onCheckedChange={() => toggleReminder(reminder.id)}
+                />
+              </div>
+            </CardHeader>
+
+            <CardContent>
+              <div className="space-y-3">
+                {reminder.description && (
+                  <p className="text-sm text-muted-foreground">{reminder.description}</p>
+                )}
+
+                <div className="flex items-center justify-between text-sm">
+                  <div>
+                    <span className="text-muted-foreground">{t("reminders.frequencyLabel")} </span>
+                    <span className="capitalize">{t(`reminders.frequency.${reminder.frequency}`)}</span>
+                  </div>
+
+                  <div>
+                    <span className="text-muted-foreground">{t("reminders.next")} </span>
+                    <span>{getNextTriggerTime(reminder)}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => editReminder(reminder)}
+                  >
+                    <Edit className="w-3 h-3 mr-1" />
+                    {t("common.edit")}
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => deleteReminder(reminder.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="w-3 h-3 mr-1" />
+                    {t("common.delete")}
+                  </Button>
+                </div>
+
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+
+    {filteredReminders.length === 0 && (
+      <div className="text-center py-12">
+        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+          <Bell className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <h3 className="text-lg text-muted-foreground mb-2">
+          {t("reminders.noReminders")}
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          {t("reminders.noRemindersSub")}
+        </p>
+      </div>
+    )}
+
+  </div>
+);
+
 }

@@ -22,6 +22,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { patientsAPI } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 
 const mockPatients = [
   {
@@ -50,6 +51,9 @@ const doshaColors = {
 };
 
 export function PatientManagement() {
+  
+  const { t } = useTranslation();
+
   type Patient = {
     id: string;
     name: string;
@@ -344,352 +348,141 @@ const handleEditSave = async () => {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl text-foreground">Patient Management</h1>
-          <p className="text-muted-foreground">
-            Manage your patient database and records
-          </p>
-        </div>
-
-        <Dialog open={isAddPatientOpen} onOpenChange={setIsAddPatientOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Patient
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add New Patient</DialogTitle>
-              <DialogDescription>
-                Enter patient information and lifestyle details
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name *</Label>
-                <Input
-                  id="name"
-                  value={newPatient.name}
-                  onChange={(e) =>
-                    setNewPatient({ ...newPatient, name: e.target.value })
-                  }
-                  placeholder="Enter full name"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="age">Age *</Label>
-                <Input
-                  id="age"
-                  type="number"
-                  value={newPatient.age}
-                  onChange={(e) =>
-                    setNewPatient({ ...newPatient, age: e.target.value })
-                  }
-                  placeholder="Enter age"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="gender">Gender *</Label>
-                <Select
-                  value={newPatient.gender}
-                  onValueChange={(value) =>
-                    setNewPatient({ ...newPatient, gender: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={newPatient.phone}
-                  onChange={(e) =>
-                    setNewPatient({ ...newPatient, phone: e.target.value })
-                  }
-                  placeholder="+91 98765 43210"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newPatient.email}
-                  onChange={(e) =>
-                    setNewPatient({ ...newPatient, email: e.target.value })
-                  }
-                  placeholder="patient@email.com"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="weight">Weight (kg)</Label>
-                <Input
-                  id="weight"
-                  type="number"
-                  value={newPatient.weight}
-                  onChange={(e) =>
-                    setNewPatient({ ...newPatient, weight: e.target.value })
-                  }
-                  placeholder="Enter weight"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="height">Height (cm)</Label>
-                <Input
-                  id="height"
-                  type="number"
-                  value={newPatient.height}
-                  onChange={(e) =>
-                    setNewPatient({ ...newPatient, height: e.target.value })
-                  }
-                  placeholder="Enter height"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="dosha">Dosha Type</Label>
-                <Select
-                  value={newPatient.dosha}
-                  onValueChange={(value) =>
-                    setNewPatient({ ...newPatient, dosha: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select dosha" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Vata">Vata</SelectItem>
-                    <SelectItem value="Pitta">Pitta</SelectItem>
-                    <SelectItem value="Kapha">Kapha</SelectItem>
-                    <SelectItem value="Vata-Pitta">Vata-Pitta</SelectItem>
-                    <SelectItem value="Pitta-Kapha">Pitta-Kapha</SelectItem>
-                    <SelectItem value="Vata-Kapha">Vata-Kapha</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="md:col-span-2 space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Textarea
-                  id="address"
-                  value={newPatient.address}
-                  onChange={(e) =>
-                    setNewPatient({ ...newPatient, address: e.target.value })
-                  }
-                  placeholder="Enter address"
-                  rows={2}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="sleep">Sleep Pattern</Label>
-                <Input
-                  id="sleep"
-                  value={newPatient.lifestyle.sleep}
-                  onChange={(e) =>
-                    setNewPatient({
-                      ...newPatient,
-                      lifestyle: {
-                        ...newPatient.lifestyle,
-                        sleep: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="e.g., 7-8 hours, difficulty falling asleep"
-                />
-              </div>
-
-              {/* <div className="space-y-2">
-                <Label htmlFor="water">Water Intake</Label>
-                <Input
-                  id="water"
-                  value={newPatient.lifestyle.water}
-                  onChange={(e) => setNewPatient({
-                    ...newPatient, 
-                    lifestyle: {...newPatient.lifestyle, water: e.target.value}
-                  })}
-                  placeholder="e.g., 2-3 liters per day"
-                />
-              </div> */}
-              <div className="space-y-2">
-                <Label htmlFor="bowel">Bowel Movement</Label>
-                <Input
-                  id="bowel"
-                  value={newPatient.lifestyle.bowel}
-                  onChange={(e) =>
-                    setNewPatient({
-                      ...newPatient,
-                      lifestyle: {
-                        ...newPatient.lifestyle,
-                        bowel: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="e.g., Regular, once daily"
-                />
-              </div>
-
-              {/* <div className="space-y-2">
-                <Label htmlFor="exercise">Exercise Routine</Label>
-                <Input
-                  id="exercise"
-                  value={newPatient.lifestyle.exercise}
-                  onChange={(e) => setNewPatient({
-                    ...newPatient, 
-                    lifestyle: {...newPatient.lifestyle, exercise: e.target.value}
-                  })}
-                  placeholder="e.g., 30 min walking daily"
-                />
-              </div> */}
-            </div>
-
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setIsAddPatientOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAddPatient}
-                className="bg-primary hover:bg-primary/90"
-              >
-                Save Patient
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-
-        {editingPatient && (
-  <Dialog open={!!editingPatient} onOpenChange={() => setEditingPatient(null)}>
-    <DialogContent className="max-w-lg">
-      <DialogHeader>
-        <DialogTitle>Edit Patient Details</DialogTitle>
-        <DialogDescription>
-          Update patient’s medical information below.
-        </DialogDescription>
-      </DialogHeader>
-
-      <div className="space-y-4">
-        <div>
-          <Label>Height (cm)</Label>
-          <Input
-            type="number"
-            value={editForm.height ?? ""}
-            onChange={(e) =>
-              setEditForm({ ...editForm, height: e.target.value })
-            }
-          />
-        </div>
-
-        <div>
-          <Label>Weight (kg)</Label>
-          <Input
-            type="number"
-            value={editForm.weight ?? ""}
-            onChange={(e) =>
-              setEditForm({ ...editForm, weight: e.target.value })
-            }
-          />
-        </div>
-
-        <div>
-          <Label>Dosha Type</Label>
-          <Select
-            value={editForm.dosha ?? ""}
-            onValueChange={(value) =>
-              setEditForm({ ...editForm, dosha: value })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select Dosha" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="VATA">Vata</SelectItem>
-              <SelectItem value="PITTA">Pitta</SelectItem>
-              <SelectItem value="KAPHA">Kapha</SelectItem>
-              <SelectItem value="TRIDOSHA">Tridosha</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label>Sleep Pattern</Label>
-          <Input
-            value={editForm.sleepPattern ?? ""}
-            onChange={(e) =>
-              setEditForm({ ...editForm, sleepPattern: e.target.value })
-            }
-          />
-        </div>
-
-        <div>
-          <Label>Bowel Movement</Label>
-          <Input
-            value={editForm.bowelMovement ?? ""}
-            onChange={(e) =>
-              setEditForm({ ...editForm, bowelMovement: e.target.value })
-            }
-          />
-        </div>
+return (
+  <div className="space-y-6">
+    {/* Header */}
+    <div className="flex justify-between items-center">
+      <div>
+        <h1 className="text-3xl text-foreground">{t("patients.title")}</h1>
+        <p className="text-muted-foreground">
+          {t("patients.subtitle")}
+        </p>
       </div>
 
-      <div className="flex justify-end gap-2 mt-6">
-        <Button variant="outline" onClick={() => setEditingPatient(null)}>
-          Cancel
-        </Button>
-        <Button onClick={handleEditSave}>Save</Button>
-      </div>
-    </DialogContent>
-  </Dialog>
-)}
+      <Dialog open={isAddPatientOpen} onOpenChange={setIsAddPatientOpen}>
+        <DialogTrigger asChild>
+          <Button className="bg-primary hover:bg-primary/90">
+            <Plus className="w-4 h-4 mr-2" />
+            {t("patients.addPatient")}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t("patients.addNewPatient")}</DialogTitle>
+            <DialogDescription>
+              {t("patients.addNewPatientDesc")}
+            </DialogDescription>
+          </DialogHeader>
 
-
-      </div>
-
-      {/* Search and Filters */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          {/* ADD PATIENT FORM */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">{t("patients.fullName")} *</Label>
               <Input
-                placeholder="Search patients by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                id="name"
+                value={newPatient.name}
+                onChange={(e) =>
+                  setNewPatient({ ...newPatient, name: e.target.value })
+                }
+                placeholder={t("patients.fullNamePlaceholder")}
               />
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
-              <Select value={filterDosha} onValueChange={setFilterDosha}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by Dosha" />
+            <div className="space-y-2">
+              <Label htmlFor="age">{t("patients.age")} *</Label>
+              <Input
+                id="age"
+                type="number"
+                value={newPatient.age}
+                onChange={(e) =>
+                  setNewPatient({ ...newPatient, age: e.target.value })
+                }
+                placeholder={t("patients.agePlaceholder")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="gender">{t("patients.gender")} *</Label>
+              <Select
+                value={newPatient.gender}
+                onValueChange={(value) =>
+                  setNewPatient({ ...newPatient, gender: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("patients.selectGender")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Doshas</SelectItem>
+                  <SelectItem value="male">{t("patients.male")}</SelectItem>
+                  <SelectItem value="female">{t("patients.female")}</SelectItem>
+                  <SelectItem value="other">{t("patients.other")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">{t("patients.phone")}</Label>
+              <Input
+                id="phone"
+                value={newPatient.phone}
+                onChange={(e) =>
+                  setNewPatient({ ...newPatient, phone: e.target.value })
+                }
+                placeholder={t("patients.phonePlaceholder")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">{t("patients.email")}</Label>
+              <Input
+                id="email"
+                type="email"
+                value={newPatient.email}
+                onChange={(e) =>
+                  setNewPatient({ ...newPatient, email: e.target.value })
+                }
+                placeholder={t("patients.emailPlaceholder")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="weight">{t("patients.weight")}</Label>
+              <Input
+                id="weight"
+                type="number"
+                value={newPatient.weight}
+                onChange={(e) =>
+                  setNewPatient({ ...newPatient, weight: e.target.value })
+                }
+                placeholder={t("patients.weightPlaceholder")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="height">{t("patients.height")}</Label>
+              <Input
+                id="height"
+                type="number"
+                value={newPatient.height}
+                onChange={(e) =>
+                  setNewPatient({ ...newPatient, height: e.target.value })
+                }
+                placeholder={t("patients.heightPlaceholder")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dosha">{t("patients.doshaType")}</Label>
+              <Select
+                value={newPatient.dosha}
+                onValueChange={(value) =>
+                  setNewPatient({ ...newPatient, dosha: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("patients.selectDosha")} />
+                </SelectTrigger>
+                <SelectContent>
                   <SelectItem value="Vata">Vata</SelectItem>
                   <SelectItem value="Pitta">Pitta</SelectItem>
                   <SelectItem value="Kapha">Kapha</SelectItem>
@@ -699,124 +492,309 @@ const handleEditSave = async () => {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="md:col-span-2 space-y-2">
+              <Label htmlFor="address">{t("patients.address")}</Label>
+              <Textarea
+                id="address"
+                value={newPatient.address}
+                onChange={(e) =>
+                  setNewPatient({ ...newPatient, address: e.target.value })
+                }
+                placeholder={t("patients.addressPlaceholder")}
+                rows={2}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sleep">{t("patients.sleepPattern")}</Label>
+              <Input
+                id="sleep"
+                value={newPatient.lifestyle.sleep}
+                onChange={(e) =>
+                  setNewPatient({
+                    ...newPatient,
+                    lifestyle: {
+                      ...newPatient.lifestyle,
+                      sleep: e.target.value,
+                    },
+                  })
+                }
+                placeholder={t("patients.sleepPlaceholder")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bowel">{t("patients.bowelMovement")}</Label>
+              <Input
+                id="bowel"
+                value={newPatient.lifestyle.bowel}
+                onChange={(e) =>
+                  setNewPatient({
+                    ...newPatient,
+                    lifestyle: {
+                      ...newPatient.lifestyle,
+                      bowel: e.target.value,
+                    },
+                  })
+                }
+                placeholder={t("patients.bowelPlaceholder")}
+              />
+            </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Patient List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Patient List ({filteredPatients.length})</CardTitle>
-          <CardDescription>
-            Manage your patient database and access their profiles
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Age</TableHead>
-                <TableHead>Gender</TableHead>
-                <TableHead>Dosha</TableHead>
-                <TableHead>BMI</TableHead>
-                <TableHead>Last Visit</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredPatients.map((patient) => (
-                <TableRow key={patient.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm">{patient.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {patient.email}
-                        </p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{patient.age}</TableCell>
-                  <TableCell>{patient.gender}</TableCell>
-                  <TableCell>
-                    <Badge className={`${doshaColors[patient.dosha]} border-0`}>
-                      {patient.dosha}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`text-sm ${
-                        patient.bmi < 18.5
-                          ? "text-blue-600"
-                          : patient.bmi > 25
-                          ? "text-red-600"
-                          : "text-green-600"
-                      }`}
-                    >
-                      {patient.bmi}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {patient.lastVisit}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <p>{patient.phone}</p>
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        {patient.address?.split(",")[0]}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigate(`/patients/${patient.id}`)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button
-  variant="ghost"
-  size="sm"
-  onClick={() => {
-    setEditingPatient(patient);
-    setEditForm({
-      height: patient.height || "",
-      weight: patient.weight || "",
-      doshaType: patient.dosha || "",
-      sleepPattern: patient.sleepPattern || "",
-      bowelMovement: patient.bowelMovement || "",
-    });
-  }}
->
-  <Edit className="w-4 h-4" />
-</Button>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" onClick={() => setIsAddPatientOpen(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={handleAddPatient}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {t("common.save")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeletePatient(patient.id)}
-                      >
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* EDIT PATIENT MODAL */}
+      {editingPatient && (
+        <Dialog open={!!editingPatient} onOpenChange={() => setEditingPatient(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{t("patients.editPatient")}</DialogTitle>
+              <DialogDescription>
+                {t("patients.editPatientDesc")}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <Label>{t("patients.height")}</Label>
+                <Input
+                  type="number"
+                  value={editForm.height ?? ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, height: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <Label>{t("patients.weight")}</Label>
+                <Input
+                  type="number"
+                  value={editForm.weight ?? ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, weight: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <Label>{t("patients.doshaType")}</Label>
+                <Select
+                  value={editForm.dosha ?? ""}
+                  onValueChange={(value) =>
+                    setEditForm({ ...editForm, dosha: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("patients.selectDosha")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="VATA">Vata</SelectItem>
+                    <SelectItem value="PITTA">Pitta</SelectItem>
+                    <SelectItem value="KAPHA">Kapha</SelectItem>
+                    <SelectItem value="TRIDOSHA">Tridosha</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>{t("patients.sleepPattern")}</Label>
+                <Input
+                  value={editForm.sleepPattern ?? ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, sleepPattern: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <Label>{t("patients.bowelMovement")}</Label>
+                <Input
+                  value={editForm.bowelMovement ?? ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, bowelMovement: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <Button variant="outline" onClick={() => setEditingPatient(null)}>
+                {t("common.cancel")}
+              </Button>
+              <Button onClick={handleEditSave}>{t("common.save")}</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
-  );
+
+    {/* Search Section */}
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder={t("patients.searchPlaceholder")}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <Select value={filterDosha} onValueChange={setFilterDosha}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder={t("patients.filterDosha")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("patients.allDoshas")}</SelectItem>
+                <SelectItem value="Vata">Vata</SelectItem>
+                <SelectItem value="Pitta">Pitta</SelectItem>
+                <SelectItem value="Kapha">Kapha</SelectItem>
+                <SelectItem value="Vata-Pitta">Vata-Pitta</SelectItem>
+                <SelectItem value="Pitta-Kapha">Pitta-Kapha</SelectItem>
+                <SelectItem value="Vata-Kapha">Vata-Kapha</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    {/* PATIENT LIST */}
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          {t("patients.patientList")} ({filteredPatients.length})
+        </CardTitle>
+        <CardDescription>
+          {t("patients.patientListDesc")}
+        </CardDescription>
+      </CardHeader>
+
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t("patients.thName")}</TableHead>
+              <TableHead>{t("patients.thAge")}</TableHead>
+              <TableHead>{t("patients.thGender")}</TableHead>
+              <TableHead>{t("patients.thDosha")}</TableHead>
+              <TableHead>{t("patients.thBMI")}</TableHead>
+              <TableHead>{t("patients.thLastVisit")}</TableHead>
+              <TableHead>{t("patients.thContact")}</TableHead>
+              <TableHead>{t("patients.thActions")}</TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <TableBody>
+            {filteredPatients.map((patient) => (
+              <TableRow key={patient.id}>
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm">{patient.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {patient.email}
+                      </p>
+                    </div>
+                  </div>
+                </TableCell>
+
+                <TableCell>{patient.age}</TableCell>
+                <TableCell>{patient.gender}</TableCell>
+                <TableCell>
+                  <Badge className={`${doshaColors[patient.dosha]} border-0`}>
+                    {patient.dosha}
+                  </Badge>
+                </TableCell>
+
+                <TableCell>
+                  <span
+                    className={`text-sm ${
+                      patient.bmi < 18.5
+                        ? "text-blue-600"
+                        : patient.bmi > 25
+                        ? "text-red-600"
+                        : "text-green-600"
+                    }`}
+                  >
+                    {patient.bmi}
+                  </span>
+                </TableCell>
+
+                <TableCell>
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    {patient.lastVisit}
+                  </div>
+                </TableCell>
+
+                <TableCell>
+                  <div className="text-sm">
+                    <p>{patient.phone}</p>
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      <MapPin className="w-3 h-3 mr-1" />
+                      {patient.address?.split(",")[0]}
+                    </div>
+                  </div>
+                </TableCell>
+
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                    <Button variant="ghost" size="sm" onClick={() => navigate(`/patients/${patient.id}`)}>
+                      <Eye className="w-4 h-4" />
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEditingPatient(patient);
+                        setEditForm({
+                          height: patient.height || "",
+                          weight: patient.weight || "",
+                          doshaType: patient.dosha || "",
+                          sleepPattern: patient.sleepPattern || "",
+                          bowelMovement: patient.bowelMovement || "",
+                        });
+                      }}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+
+                    <Button variant="ghost" size="sm" onClick={() => handleDeletePatient(patient.id)}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  </div>
+);
+
 }

@@ -55,9 +55,12 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../contexts/AuthContext";
+import { useTranslation } from "react-i18next";
+
 
 export function PatientSettings({ patient }) {
   const { user } = useAuth(); // dynamic user data
+  const { t } = useTranslation();
 
   const [profileData, setProfileData] = useState({
     name: user?.name || "",
@@ -81,167 +84,182 @@ export function PatientSettings({ patient }) {
     alert("Profile updated!");
   };
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl">Settings</h1>
-      <p className="text-muted-foreground">Manage your personal details</p>
+return (
+  <div className="space-y-6">
+    {/* Header */}
+    <h1 className="text-3xl">{t("patientSettings.title")}</h1>
+    <p className="text-muted-foreground">
+      {t("patientSettings.subtitle")}
+    </p>
 
-      <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid grid-cols-1 w-full">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-        </TabsList>
+    <Tabs defaultValue="profile" className="w-full">
+      <TabsList className="grid grid-cols-1 w-full">
+        <TabsTrigger value="profile">
+          {t("patientSettings.tabs.profile")}
+        </TabsTrigger>
+      </TabsList>
 
-        {/* ------------------ PROFILE TAB ------------------ */}
-        <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>Update your personal and health details</CardDescription>
-            </CardHeader>
+      {/* ------------------ PROFILE TAB ------------------ */}
+      <TabsContent value="profile">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("patientSettings.profile.heading")}</CardTitle>
+            <CardDescription>
+              {t("patientSettings.profile.description")}
+            </CardDescription>
+          </CardHeader>
 
-            <CardContent className="space-y-4">
+          <CardContent className="space-y-4">
+            {/* Avatar */}
+            <div className="flex items-center space-x-4">
+              <Avatar className="w-20 h-20">
+                <AvatarImage src={user?.avatar} />
+                <AvatarFallback>
+                  {user?.name?.charAt(0)?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </div>
 
-              {/* Avatar */}
-              <div className="flex items-center space-x-4">
-                <Avatar className="w-20 h-20">
-                  <AvatarImage src={user?.avatar} />
-                  <AvatarFallback>
-                    {user?.name?.charAt(0)?.toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
+            {/* Name */}
+            <div>
+              <Label>{t("patientSettings.fields.name")}</Label>
+              <Input
+                value={profileData.name}
+                onChange={(e) =>
+                  setProfileData({ ...profileData, name: e.target.value })
+                }
+              />
+            </div>
 
-              {/* Name */}
-              <div>
-                <Label>Name</Label>
-                <Input
-                  value={profileData.name}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, name: e.target.value })
-                  }
-                />
-              </div>
+            {/* Email */}
+            <div>
+              <Label>{t("patientSettings.fields.email")}</Label>
+              <Input value={profileData.email} disabled />
+            </div>
 
-              {/* Email */}
-              <div>
-                <Label>Email</Label>
-                <Input value={profileData.email} disabled />
-              </div>
+            {/* Phone */}
+            <div>
+              <Label>{t("patientSettings.fields.phone")}</Label>
+              <Input
+                value={profileData.phone}
+                onChange={(e) =>
+                  setProfileData({ ...profileData, phone: e.target.value })
+                }
+              />
+            </div>
 
-              {/* Phone */}
-              <div>
-                <Label>Phone</Label>
-                <Input
-                  value={profileData.phone}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, phone: e.target.value })
-                  }
-                />
-              </div>
+            {/* Age */}
+            <div>
+              <Label>{t("patientSettings.fields.age")}</Label>
+              <Input
+                type="number"
+                value={profileData.age}
+                onChange={(e) =>
+                  setProfileData({ ...profileData, age: e.target.value })
+                }
+              />
+            </div>
 
-              {/* Age */}
-              <div>
-                <Label>Age</Label>
-                <Input
-                  type="number"
-                  value={profileData.age}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, age: e.target.value })
-                  }
-                />
-              </div>
+            {/* Gender */}
+            <div>
+              <Label>{t("patientSettings.fields.gender")}</Label>
+              <Input
+                value={profileData.gender}
+                onChange={(e) =>
+                  setProfileData({ ...profileData, gender: e.target.value })
+                }
+              />
+            </div>
 
-              {/* Gender */}
-              <div>
-                <Label>Gender</Label>
-                <Input
-                  value={profileData.gender}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, gender: e.target.value })
-                  }
-                />
-              </div>
+            {/* Dosha */}
+            <div>
+              <Label>{t("patientSettings.fields.doshaType")}</Label>
+              <Input value={profileData.doshaType} disabled />
+            </div>
 
-              {/* Dosha */}
-              <div>
-                <Label>Dosha Type</Label>
-                <Input value={profileData.doshaType} disabled />
-              </div>
+            {/* Address */}
+            <div>
+              <Label>{t("patientSettings.fields.address")}</Label>
+              <Textarea
+                value={profileData.address}
+                onChange={(e) =>
+                  setProfileData({ ...profileData, address: e.target.value })
+                }
+              />
+            </div>
 
-              {/* Address */}
-              <div>
-                <Label>Address</Label>
-                <Textarea
-                  value={profileData.address}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, address: e.target.value })
-                  }
-                />
-              </div>
+            {/* Height */}
+            <div>
+              <Label>{t("patientSettings.fields.height")}</Label>
+              <Input
+                type="number"
+                value={profileData.height}
+                onChange={(e) =>
+                  setProfileData({ ...profileData, height: e.target.value })
+                }
+              />
+            </div>
 
-              {/* Height */}
-              <div>
-                <Label>Height (cm)</Label>
-                <Input
-                  type="number"
-                  value={profileData.height}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, height: e.target.value })
-                  }
-                />
-              </div>
+            {/* Weight */}
+            <div>
+              <Label>{t("patientSettings.fields.weight")}</Label>
+              <Input
+                type="number"
+                value={profileData.weight}
+                onChange={(e) =>
+                  setProfileData({ ...profileData, weight: e.target.value })
+                }
+              />
+            </div>
 
-              {/* Weight */}
-              <div>
-                <Label>Weight (kg)</Label>
-                <Input
-                  type="number"
-                  value={profileData.weight}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, weight: e.target.value })
-                  }
-                />
-              </div>
+            {/* Sleep Pattern */}
+            <div>
+              <Label>{t("patientSettings.fields.sleepPattern")}</Label>
+              <Input
+                value={profileData.sleepPattern}
+                onChange={(e) =>
+                  setProfileData({
+                    ...profileData,
+                    sleepPattern: e.target.value,
+                  })
+                }
+              />
+            </div>
 
-              {/* Sleep Pattern */}
-              <div>
-                <Label>Sleep Pattern</Label>
-                <Input
-                  value={profileData.sleepPattern}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, sleepPattern: e.target.value })
-                  }
-                />
-              </div>
+            {/* Bowel Movement */}
+            <div>
+              <Label>{t("patientSettings.fields.bowelMovement")}</Label>
+              <Input
+                value={profileData.bowelMovement}
+                onChange={(e) =>
+                  setProfileData({
+                    ...profileData,
+                    bowelMovement: e.target.value,
+                  })
+                }
+              />
+            </div>
 
-              {/* Bowel Movement */}
-              <div>
-                <Label>Bowel Movement</Label>
-                <Input
-                  value={profileData.bowelMovement}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, bowelMovement: e.target.value })
-                  }
-                />
-              </div>
+            {/* Patient Code */}
+            <div>
+              <Label>{t("patientSettings.fields.patientCode")}</Label>
+              <Input value={profileData.patientCode} disabled />
+            </div>
 
-              {/* Patient Code */}
-              <div>
-                <Label>Patient Code</Label>
-                <Input value={profileData.patientCode} disabled />
-              </div>
+            {/* Created At */}
+            <div>
+              <Label>{t("patientSettings.fields.createdAt")}</Label>
+              <Input value={profileData.createdAt} disabled />
+            </div>
 
-              {/* Created At */}
-              <div>
-                <Label>Profile Created On</Label>
-                <Input value={profileData.createdAt} disabled />
-              </div>
+            <Button onClick={handleSaveProfile}>
+              {t("patientSettings.actions.saveChanges")}
+            </Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
+  </div>
+);
 
-              <Button onClick={handleSaveProfile}>Save Changes</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
 }
