@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader } from './ui/card';
-import { Button } from './ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import React, { useState, useRef, useEffect } from "react";
+import { Card, CardContent, CardHeader } from "./ui/card";
+import { Button } from "./ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import {
   MessageCircle,
   Send,
@@ -12,9 +12,10 @@ import {
   MoreVertical,
   CheckCheck,
   Clock,
-} from 'lucide-react';
-import { Textarea } from './ui/textarea';
-import { patientsAPI, chatAPI } from '../services/api';
+} from "lucide-react";
+import { Textarea } from "./ui/textarea";
+import { patientsAPI, chatAPI, authAPI } from "../services/api";
+import { io, Socket } from "socket.io-client";
 
 type ChatMessage = {
   id: string;
@@ -35,16 +36,29 @@ type Doctor = {
   role: string;
 };
 
+type UserProfile = {
+  id: string;
+  name: string;
+  email: string;
+};
+
 export function ChatWithDoctor() {
   const [doctor, setDoctor] = useState<Doctor | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState("");
   const [loadingMessages, setLoadingMessages] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+  
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("accessToken") || localStorage.getItem("token")
+      : null;
 
   // --- Helpers ---
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -52,9 +66,9 @@ export function ChatWithDoctor() {
   }, [messages]);
 
   const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(timestamp).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -64,9 +78,9 @@ export function ChatWithDoctor() {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    if (date.toDateString() === today.toDateString()) return 'Today';
-    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (date.toDateString() === today.toDateString()) return "Today";
+    if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
   const groupMessagesByDate = (msgs: ChatMessage[]) => {
@@ -81,62 +95,162 @@ export function ChatWithDoctor() {
 
   const messageGroups = groupMessagesByDate(messages);
 
-  // --- Load doctor + conversation ---
+  // --- Load User, Doctor & Conversation ---
   useEffect(() => {
-    const fetchDoctorAndMessages = async () => {
+    const initData = async () => {
       try {
-        // Patient → which doctor am I assigned to?
-        const res = await patientsAPI.getDoctor();
-        if (!res.data?.success || !res.data.data) {
-          console.error('No doctor assigned to this patient');
+        // 1. Get Current User
+        const userRes = await authAPI.getMe();
+        if (userRes.data?.success) {
+            setCurrentUser(userRes.data.data);
+        }
+
+        // 2. Get Assigned Doctor
+        const docRes = await patientsAPI.getDoctor();
+        if (!docRes.data?.success || !docRes.data.data) {
+          console.error("No doctor assigned to this patient");
           return;
         }
 
-        const doc: Doctor = res.data.data;
+        const doc: Doctor = docRes.data.data;
         setDoctor(doc);
 
-        // Now load the conversation with this doctor
+        // 3. Load Conversation
         setLoadingMessages(true);
-        const convRes = await chatAPI.getConversation(doc.id, {
-          page: 1,
-          limit: 100,
-        });
+        // Note: Check your API definition. Usually patient gets conversation by simply calling endpoint
+        // without passing ID, or passing doctorId depending on backend.
+        const convRes = await chatAPI.getConversation(doc.id); 
         const msgs: ChatMessage[] = convRes.data?.data ?? [];
         setMessages(msgs);
+
+        // 4. REST API Bulk Read (mark unread as read)
+        const unreadIds = msgs
+            .filter((m) => !m.isRead && m.senderId === doc.id)
+            .map((m) => m.id);
+
+        if (unreadIds.length > 0) {
+            unreadIds.forEach(id => chatAPI.markAsRead(id));
+        }
+
       } catch (err) {
-        console.error('Error loading doctor or conversation', err);
+        console.error("Error loading chat data", err);
       } finally {
         setLoadingMessages(false);
       }
     };
 
-    fetchDoctorAndMessages();
+    initData();
   }, []);
+
+  // --- Socket setup ---
+  useEffect(() => {
+    if (!doctor || !token || !currentUser) return;
+
+    const baseSocketUrl = (import.meta.env.VITE_API_URL || "").replace("/api", "");
+    const socket = io(baseSocketUrl, { auth: { token } });
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      console.log("Patient socket connected:", socket.id);
+      
+      // 🔄 CHANGE 1: Join My OWN Room, NOT the Doctor's Room.
+      // The backend sends messages to io.to(receiverId). I am the receiver.
+      socket.emit("joinRoom", currentUser.id);
+      
+      // Emit read receipts for existing unread messages
+      const unreadIds = messages
+        .filter((m) => !m.isRead && m.senderId === doctor.id)
+        .map((m) => m.id);
+      
+      if (unreadIds.length > 0) {
+        socket.emit("messageRead", { messageIds: unreadIds, senderId: currentUser.id });
+      }
+    });
+
+    // --- HANDLE INCOMING MESSAGES ---
+    const handleIncoming = (msg: ChatMessage) => {
+      // 🔄 CHANGE 2: Strict String Conversions
+      const myId = String(currentUser.id);
+      const docId = String(doctor.id);
+      const senderId = String(msg.senderId);
+      const receiverId = msg.receiverId ? String(msg.receiverId) : null;
+
+      // 1. Ignore echoes (messages I sent)
+      if (senderId === myId) return;
+
+      // 🔄 CHANGE 3: Strict Privacy Check
+      // Accept if it is FROM the doctor AND sent TO me (or my patient ID)
+      const isFromDoctor = senderId === docId;
+      const isToMe = receiverId === myId || String(msg.patientId) === myId;
+
+      if (!isFromDoctor || !isToMe) return;
+
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+
+      // Mark as read immediately
+      if (!msg.isRead) {
+        socket.emit("messageRead", { messageIds: [msg.id], senderId: senderId });
+        chatAPI.markAsRead(msg.id).catch(console.error);
+      }
+    };
+
+    // --- HANDLE READ RECEIPTS ---
+    const handleMessageRead = (data: { messageIds: string[], userId: string }) => {
+        setMessages((prev) => 
+            prev.map((msg) => 
+                data.messageIds.includes(msg.id) ? { ...msg, isRead: true } : msg
+            )
+        );
+    };
+
+    socket.on("newMessage", handleIncoming);
+    socket.on("messageRead", handleMessageRead);
+
+    return () => {
+      socket.off("connect");
+      socket.off("newMessage", handleIncoming);
+      socket.off("messageRead", handleMessageRead);
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [doctor, token, currentUser]); // Removed 'messages' from dep array to prevent loop re-connections
 
   // --- Send message ---
   const sendMessage = async () => {
-    if (!doctor || !newMessage.trim()) return;
+    if (!doctor || !currentUser || !newMessage.trim()) return;
 
     const temp: ChatMessage = {
       id: `temp-${Date.now()}`,
-      senderId: 'me', // just for UI; actual ID will come from backend
+      senderId: currentUser.id,
       receiverId: doctor.id,
-      patientId: undefined,
+      patientId: currentUser.id,
       message: newMessage,
       isRead: false,
       createdAt: new Date().toISOString(),
     };
 
-    // Optimistic UI update
     setMessages((prev) => [...prev, temp]);
-    setNewMessage('');
+    setNewMessage("");
+
+    const socket = socketRef.current;
+    if (socket && socket.connected) {
+        // 🔄 CHANGE 4: Ensure IDs are strings when emitting
+        socket.emit("sendMessage", {
+          receiverId: String(doctor.id),
+          patientId: String(currentUser.id),
+          message: temp.message,
+        });
+    }
 
     try {
       const res = await chatAPI.sendMessage({
         receiverId: doctor.id,
         message: temp.message,
       });
-
       const saved: ChatMessage | undefined = res.data?.data;
       if (saved) {
         setMessages((prev) =>
@@ -144,20 +258,20 @@ export function ChatWithDoctor() {
         );
       }
     } catch (err) {
-      console.error('Error sending message', err);
-      // Optional: remove temp message on failure
+      console.error("Error sending message via REST", err);
       setMessages((prev) => prev.filter((m) => m.id !== temp.id));
     }
   };
 
-  if (!doctor) {
+  // ... (Rest of the JSX rendering remains exactly the same)
+  if (!doctor || !currentUser) {
     return (
       <div className="h-[calc(100vh-8rem)] flex items-center justify-center">
-        <p className="text-muted-foreground">Loading your doctor...</p>
+        <p className="text-muted-foreground">Loading chat...</p>
       </div>
     );
   }
-
+  
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col space-y-6">
       {/* Header */}
@@ -180,18 +294,17 @@ export function ChatWithDoctor() {
                 <AvatarImage src={doctor.avatar ?? undefined} />
                 <AvatarFallback className="bg-primary/10 text-primary">
                   {doctor.name
-                    ?.split(' ')
+                    ?.split(" ")
                     .map((n) => n[0])
-                    .join('') || 'Dr'}
+                    .join("") || "Dr"}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <h3 className="text-lg">{doctor.name}</h3>
                 <div className="flex flex-col">
                   <span className="text-sm text-muted-foreground">
-                    {doctor.specialization || 'Ayurvedic Specialist'}
+                    {doctor.specialization || "Ayurvedic Specialist"}
                   </span>
-                  {/* You can later replace this with live status via socket */}
                   <span className="text-xs text-muted-foreground">
                     Doctor will respond as soon as possible
                   </span>
@@ -240,12 +353,12 @@ export function ChatWithDoctor() {
                     <div
                       key={message.id}
                       className={`flex ${
-                        isPatient ? 'justify-end' : 'justify-start'
+                        isPatient ? "justify-end" : "justify-start"
                       }`}
                     >
                       <div
                         className={`max-w-xs lg:max-w-md ${
-                          isPatient ? 'order-2' : 'order-1'
+                          isPatient ? "order-2" : "order-1"
                         }`}
                       >
                         {isDoctor && (
@@ -265,8 +378,8 @@ export function ChatWithDoctor() {
                         <div
                           className={`p-3 rounded-lg ${
                             isPatient
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted"
                           }`}
                         >
                           <p className="text-sm">{message.message}</p>
@@ -274,8 +387,8 @@ export function ChatWithDoctor() {
                           <div
                             className={`flex items-center justify-between mt-2 text-xs ${
                               isPatient
-                                ? 'text-primary-foreground/70'
-                                : 'text-muted-foreground'
+                                ? "text-primary-foreground/70"
+                                : "text-muted-foreground"
                             }`}
                           >
                             <span>{formatTime(message.createdAt)}</span>
@@ -324,7 +437,7 @@ export function ChatWithDoctor() {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                  if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     sendMessage();
                   }
@@ -335,7 +448,7 @@ export function ChatWithDoctor() {
             </div>
             <Button
               onClick={sendMessage}
-              disabled={newMessage.trim() === ''}
+              disabled={newMessage.trim() === ""}
               className="bg-primary hover:bg-primary/90"
             >
               <Send className="w-4 h-4" />

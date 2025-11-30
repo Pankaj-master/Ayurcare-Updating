@@ -3,7 +3,6 @@ import { PrismaClient } from "@prisma/client";
 import { ApiResponse, AuthRequest } from "../types";
 import { io } from "../index";
 
-
 const prisma = new PrismaClient();
 
 export class ChatController {
@@ -39,39 +38,60 @@ export class ChatController {
   async sendMessage(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { receiverId, patientId, message } = req.body;
-      const senderId = req.user!.userId;
 
+      // Safety check for sender
+      if (!req.user || !req.user.userId) {
+        res.status(401).json({ success: false, message: "Unauthorized" });
+        return;
+      }
+      const senderId = req.user.userId;
+
+      // 1. Create Message in Database
       const chatMessage = await prisma.chatMessage.create({
         data: {
           senderId,
           receiverId,
           patientId,
           message,
+          isRead: false,
         },
         include: {
-          sender: { select: { id: true, name: true, role: true } },
-          receiver: { select: { id: true, name: true, role: true } },
+          sender: {
+            select: { id: true, name: true, role: true, avatar: true },
+          },
+          receiver: {
+            select: { id: true, name: true, role: true, avatar: true },
+          },
         },
       });
 
-      io.to(receiverId).emit("newMessage", chatMessage);
+      // 2. SOCKET EMISSION LOGIC
+      // CRITICAL FIX: Convert IDs to String explicitly.
+      // Socket.io rooms are strings. If IDs are Numbers in DB, strict matching fails without this.
+      const receiverRoom = String(receiverId);
+      const senderRoom = String(senderId);
 
-      const response: ApiResponse = {
+      // A. Emit to the Receiver (Specific User Only)
+      io.to(receiverRoom).emit("newMessage", chatMessage);
+
+      // B. Emit to Sender (For multi-device sync, e.g., phone + laptop open same time)
+      // Your frontend 'handleIncoming' must have logic to ignore this if needed,
+      // or use it to update the UI "Sent" status.
+      io.to(senderRoom).emit("newMessage", chatMessage);
+
+      // 3. Send HTTP Response
+      res.status(201).json({
         success: true,
         message: "Message sent successfully",
         data: chatMessage,
-      };
-
-      res.status(201).json(response);
-      return;
+      });
     } catch (error) {
-      const response: ApiResponse = {
+      console.error("SendMessage Error:", error);
+      res.status(500).json({
         success: false,
         message: "Error sending message",
         error: error instanceof Error ? error.message : "Unknown error",
-      };
-      res.status(500).json(response);
-      return;
+      });
     }
   }
 
