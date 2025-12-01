@@ -18,76 +18,60 @@ const TOKEN_URL = `https://${DOMAIN}/oauth2/token`;
 const AUTHORIZE_URL = `https://${DOMAIN}/oauth2/authorize`;
 const REVOKE_URL = `https://${DOMAIN}/oauth2/revoke`;
 
-async function postForm(url: string, body: URLSearchParams, extraHeaders: Record<string,string> = {}) {
-  const headers = {
-    "Content-Type": "application/x-www-form-urlencoded",
-    ...extraHeaders,
-  };
-  const res = await axios.post(url, body.toString(), { headers, timeout: 10000 });
-  return res.data;
-}
-
-export async function exchangeCodeForTokens(code: string): Promise<TokenResponse> {
-  if (!code) throw new Error("missing_code");
-  const body = new URLSearchParams({
-    grant_type: "authorization_code",
-    client_id: COGNITO_APP_CLIENT_ID,
-    code,
-    redirect_uri: COGNITO_REDIRECT_URI,
+async function postForm<T = any>(url: string, body: URLSearchParams, headers: Record<string, string> = {}): Promise<T> {
+  const res = await axios.post(url, body.toString(), {
+    headers: { "Content-Type": "application/x-www-form-urlencoded", ...headers },
+    timeout: 15000,
+    validateStatus: () => true,
   });
-  const headers: Record<string,string> = {};
-  if (COGNITO_APP_CLIENT_SECRET) {
-    const basic = Buffer.from(`${COGNITO_APP_CLIENT_ID}:${COGNITO_APP_CLIENT_SECRET}`).toString("base64");
-    headers.Authorization = `Basic ${basic}`;
-  }
-  try {
-    return await postForm(TOKEN_URL, body, headers) as TokenResponse;
-  } catch (err: any) {
-    if (axios.isAxiosError(err) && err.response) throw new Error(JSON.stringify(err.response.data));
+  if (res.status >= 400) {
+    const data = res.data || {};
+    const desc = typeof data === "object" && (data.error_description || data.error) ? (data.error_description || data.error) : JSON.stringify(data);
+    const err: any = new Error(desc);
+    err.status = res.status;
+    err.body = data;
     throw err;
   }
+  return res.data as T;
+}
+
+function authHeadersIfSecret(): Record<string, string> {
+  if (COGNITO_APP_CLIENT_SECRET && COGNITO_APP_CLIENT_SECRET.length) {
+    const basic = Buffer.from(`${COGNITO_APP_CLIENT_ID}:${COGNITO_APP_CLIENT_SECRET}`).toString("base64");
+    return { Authorization: `Basic ${basic}` };
+  }
+  return {};
+}
+
+export async function exchangeCodeForTokens(code: string, opts?: { code_verifier?: string }): Promise<TokenResponse> {
+  if (!code) throw new Error("missing_code");
+  const body = new URLSearchParams();
+  body.set("grant_type", "authorization_code");
+  body.set("code", code);
+  body.set("redirect_uri", COGNITO_REDIRECT_URI);
+  if (!COGNITO_APP_CLIENT_SECRET || !COGNITO_APP_CLIENT_SECRET.length) body.set("client_id", COGNITO_APP_CLIENT_ID);
+  if (opts?.code_verifier) body.set("code_verifier", opts.code_verifier);
+  return await postForm<TokenResponse>(TOKEN_URL, body, authHeadersIfSecret());
 }
 
 export async function refreshTokens(refreshToken: string): Promise<TokenResponse> {
   if (!refreshToken) throw new Error("missing_refresh_token");
-  const body = new URLSearchParams({
-    grant_type: "refresh_token",
-    client_id: COGNITO_APP_CLIENT_ID,
-    refresh_token: refreshToken,
-  });
-  const headers: Record<string,string> = {};
-  if (COGNITO_APP_CLIENT_SECRET) {
-    const basic = Buffer.from(`${COGNITO_APP_CLIENT_ID}:${COGNITO_APP_CLIENT_SECRET}`).toString("base64");
-    headers.Authorization = `Basic ${basic}`;
-  }
-  try {
-    return await postForm(TOKEN_URL, body, headers) as TokenResponse;
-  } catch (err: any) {
-    if (axios.isAxiosError(err) && err.response) throw new Error(JSON.stringify(err.response.data));
-    throw err;
-  }
+  const body = new URLSearchParams();
+  body.set("grant_type", "refresh_token");
+  body.set("refresh_token", refreshToken);
+  if (!COGNITO_APP_CLIENT_SECRET || !COGNITO_APP_CLIENT_SECRET.length) body.set("client_id", COGNITO_APP_CLIENT_ID);
+  return await postForm<TokenResponse>(TOKEN_URL, body, authHeadersIfSecret());
 }
 
 export async function revokeToken(token: string): Promise<void> {
   if (!token) throw new Error("missing_token");
-  const body = new URLSearchParams({
-    token,
-    client_id: COGNITO_APP_CLIENT_ID,
-  });
-  const headers: Record<string,string> = {};
-  if (COGNITO_APP_CLIENT_SECRET) {
-    const basic = Buffer.from(`${COGNITO_APP_CLIENT_ID}:${COGNITO_APP_CLIENT_SECRET}`).toString("base64");
-    headers.Authorization = `Basic ${basic}`;
-  }
-  try {
-    await postForm(REVOKE_URL, body, headers);
-  } catch (err: any) {
-    if (axios.isAxiosError(err) && err.response) throw new Error(JSON.stringify(err.response.data));
-    throw err;
-  }
+  const body = new URLSearchParams();
+  body.set("token", token);
+  if (!COGNITO_APP_CLIENT_SECRET || !COGNITO_APP_CLIENT_SECRET.length) body.set("client_id", COGNITO_APP_CLIENT_ID);
+  await postForm(REVOKE_URL, body, authHeadersIfSecret());
 }
 
-export function buildAuthorizeUrl(options?: { state?: string; identity_provider?: string; prompt?: string; }) {
+export function buildAuthorizeUrl(options?: { state?: string; identity_provider?: string; prompt?: string; code_challenge?: string }) {
   const params = new URLSearchParams({
     response_type: "code",
     client_id: COGNITO_APP_CLIENT_ID,
@@ -97,5 +81,9 @@ export function buildAuthorizeUrl(options?: { state?: string; identity_provider?
   if (options?.state) params.set("state", options.state);
   if (options?.identity_provider) params.set("identity_provider", options.identity_provider);
   if (options?.prompt) params.set("prompt", options.prompt);
+  if (options?.code_challenge) {
+    params.set("code_challenge_method", "S256");
+    params.set("code_challenge", options.code_challenge);
+  }
   return `${AUTHORIZE_URL}?${params.toString()}`;
 }

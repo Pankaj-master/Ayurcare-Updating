@@ -13,11 +13,37 @@ import {
 import { COGNITO_ENABLED } from "../utils/env";
 import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
+import { randomBytes, createHash } from "crypto";
 
 const prisma = new PrismaClient();
 
 const router = Router();
 const authController = new AuthController();
+
+/**
+ * In-memory store mapping OAuth state -> code_verifier.
+ * This is suitable for local dev. For production, use a persistent store (Redis)
+ * keyed by state and with TTL.
+ */
+const pkceStore = new Map<string, string>();
+
+/** helper: base64url encode a buffer */
+function base64url(buf: Buffer) {
+  return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/** make code_verifier and S256 code_challenge */
+function makePkcePair() {
+  const code_verifier = base64url(randomBytes(32));
+  const sha = createHash("sha256").update(code_verifier).digest();
+  const code_challenge = base64url(sha);
+  return { code_verifier, code_challenge };
+}
+
+/** make a random state string */
+function makeState() {
+  return base64url(randomBytes(16));
+}
 
 router.post(
   "/login",
@@ -32,14 +58,31 @@ router.post(
 );
 
 // OAuth - redirect to Cognito Hosted UI (stateless)
+// This now supports server-side PKCE: we generate code_verifier & code_challenge,
+// store verifier server-side (pkceStore) keyed by state, and include code_challenge + state in the authorize URL.
 router.get("/oauth/login", (req: Request, res: Response): void => {
   if (!COGNITO_ENABLED) {
     const redirectTo = process.env.POST_AUTH_REDIRECT || "/";
     res.redirect(`${redirectTo}?oauth_error=cognito_not_configured`);
     return;
   }
-  const state = typeof req.query.state === "string" ? req.query.state : "";
-  const url = buildAuthorizeUrl({ state });
+
+  // generate state and PKCE pair
+  const state = typeof req.query.state === "string" && req.query.state ? req.query.state : makeState();
+  // create code_verifier and code_challenge
+  const { code_verifier, code_challenge } = makePkcePair();
+
+  // store verifier keyed by state and auto-expire after 5 minutes
+  try {
+    pkceStore.set(state, code_verifier);
+    setTimeout(() => pkceStore.delete(state), 5 * 60 * 1000); // 5 minutes TTL
+  } catch (e) {
+    // ignore store errors for now
+    console.warn("PKCE store warning:", e);
+  }
+
+  // build authorize url with code_challenge and state
+  const url = buildAuthorizeUrl({ state, code_challenge });
   res.redirect(url);
 });
 
@@ -49,12 +92,21 @@ router.get(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const code = typeof req.query.code === "string" ? req.query.code : "";
+      const state = typeof req.query.state === "string" ? req.query.state : "";
       if (!code) {
         res.status(400).json({ success: false, message: "missing_code" });
         return;
       }
 
-      const tokens: any = await exchangeCodeForTokens(code);
+      // attempt to retrieve code_verifier from our in-memory pkceStore using state
+      const code_verifier = state ? pkceStore.get(state) : undefined;
+      // if found, delete immediately to avoid reuse
+      if (state && code_verifier) pkceStore.delete(state);
+
+      // Exchange code for tokens. Pass code_verifier only if we have one (PKCE path).
+      const tokens: any = code_verifier
+        ? await exchangeCodeForTokens(code, { code_verifier })
+        : await exchangeCodeForTokens(code);
 
       const cookieOptions = {
         httpOnly: true,
@@ -67,8 +119,7 @@ router.get(
       };
 
       if (tokens.id_token) res.cookie("id_token", tokens.id_token, cookieOptions);
-      if (tokens.access_token)
-        res.cookie("access_token", tokens.access_token, cookieOptions);
+      if (tokens.access_token) res.cookie("access_token", tokens.access_token, cookieOptions);
       if (tokens.refresh_token)
         res.cookie("refresh_token", tokens.refresh_token, {
           httpOnly: true,
@@ -79,7 +130,7 @@ router.get(
       res.redirect(redirectTo);
       return;
     } catch (err: any) {
-      console.error("OAuth callback error:", err?.response ?? err?.message ?? err);
+      console.error("OAuth callback error:", err?.body ?? err?.response ?? err?.message ?? err);
       // If callback fails, redirect to frontend with error query param
       const redirectTo = process.env.POST_AUTH_REDIRECT || "/";
       try {
@@ -134,8 +185,7 @@ router.post(
         };
 
         if (tokens.id_token) res.cookie("id_token", tokens.id_token, cookieOptions);
-        if (tokens.access_token)
-          res.cookie("access_token", tokens.access_token, cookieOptions);
+        if (tokens.access_token) res.cookie("access_token", tokens.access_token, cookieOptions);
         if (tokens.refresh_token)
           res.cookie("refresh_token", tokens.refresh_token, {
             httpOnly: true,

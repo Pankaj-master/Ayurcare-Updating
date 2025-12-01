@@ -7,3 +7,9 @@ UI/src/components/.vscode/
 UI/.env
 backend/.env
 backend/prisma/migrations/
+receipe_sec/
+# Python venv
+receipe_sec/.venv/
+receipe_sec/.venv
+# recipe folder
+receipe_sec/
