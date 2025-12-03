@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  import.meta.env.VITE_API_URL || "http://10.148.199.194:5000/api";
 
 // Create axios instance
 const api = axios.create({
@@ -153,18 +153,50 @@ export const recipesAPI = {
 
 // Diet Plans API
 export const dietPlansAPI = {
+  // Get all diet plans
   getAll: (params?: any) => api.get("/diet-plans", { params }),
 
+  // Create diet plan
   create: (data: any) => api.post("/diet-plans", data),
 
+  // Get diet plans for a patient
+  getForPatient: (patientId: string) =>
+    api.get(`/diet-plans/patient/${patientId}`),
+
+  // Duplicate a diet plan
+  duplicate: (id: string) => api.post(`/diet-plans/${id}/duplicate`),
+
+  // Add an item to a diet plan
+  addItem: (id: string, data: any) =>
+    api.post(`/diet-plans/${id}/add-item`, data),
+
+  // Update a single item
+  updateItem: (itemId: string, data: any) =>
+    api.put(`/diet-plans/item/${itemId}`, data),
+
+  // Delete a single item
+  deleteItem: (itemId: string) => api.delete(`/diet-plans/item/${itemId}`),
+
+  // Get all items for a plan
+  getItems: (id: string) => api.get(`/diet-plans/${id}/items`),
+
+  // Get plan grouped by days
+  getByDays: (id: string) => api.get(`/diet-plans/${id}/days`),
+
+  // Get a specific day’s diet
+  getByDay: (id: string, dayNumber: number) =>
+    api.get(`/diet-plans/${id}/day/${dayNumber}`),
+
+  // Get diet plan details
   getById: (id: string) => api.get(`/diet-plans/${id}`),
 
+  // Update diet plan
   update: (id: string, data: any) => api.put(`/diet-plans/${id}`, data),
 
+  // Soft delete diet plan
   delete: (id: string) => api.delete(`/diet-plans/${id}`),
-
-  getItems: (id: string) => api.get(`/diet-plans/${id}/items`),
 };
+
 
 
 // Chat API
@@ -192,6 +224,9 @@ export const remindersAPI = {
   update: (id: string, data: any) => api.put(`/reminders/${id}`, data),
 
   delete: (id: string) => api.delete(`/reminders/${id}`),
+
+  getByUser: (userId: string, params?: any) =>
+    api.get(`/reminders/user/${userId}`, { params }), 
 };
 
 // Health Records API
