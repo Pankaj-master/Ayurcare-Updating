@@ -48,12 +48,13 @@ import {
   Save,
   Eye,
   EyeOff,
+  Stethoscope,
 } from "lucide-react";
 
 import { useAuth } from "../contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 
-import { authAPI } from "../services/api";
+import { authAPI , usersAPI} from "../services/api";
 
 export function PatientSettings({ patient }) {
   const { user } = useAuth(); // dynamic user data
@@ -65,14 +66,24 @@ export function PatientSettings({ patient }) {
     phone: user?.phone || "",
     age: user?.age || "",
     gender: user?.gender || "",
-    doshaType: user?.doshaType || "",
     address: user?.address || "",
+    patientCode: patient?.patientCode || "",
+    createdAt: patient?.createdAt ? patient.createdAt.split("T")[0] : "",
+  });
+
+  const [medicalData, setMedicalData] = useState({
+    doshaType: user?.doshaType || "",
+    medicalHistory: user?.medicalHistory || "",
+    allergies: user?.allergies || "",
+    medications: user?.medications || "",
     height: patient?.height || "",
     weight: patient?.weight || "",
     sleepPattern: patient?.sleepPattern || "",
     bowelMovement: patient?.bowelMovement || "",
-    patientCode: patient?.patientCode || "",
-    createdAt: patient?.createdAt ? patient.createdAt.split("T")[0] : "",
+    bloodGroup: patient?.bloodGroup || "",
+    mealFrequency: patient?.mealFrequency || "",
+    waterIntake: patient?.waterIntake || "",
+    notes: patient?.notes || "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -85,10 +96,65 @@ export function PatientSettings({ patient }) {
     sessionTimeout: "30",
   });
 
-  const handleSaveProfile = () => {
-    // TODO: update patient profile API
-    console.log("Saving:", profileData);
-    alert("Profile updated!");
+  const handleSaveProfile = async () => {
+    try {
+      const userId = user?.id; // logged-in user ID
+      if (!userId) return alert("User ID missing");
+
+      // Prepare data to send to API
+      const updatedData = {
+        name: profileData.name,
+        email: profileData.email,
+        phone: profileData.phone,
+        age: Number(profileData.age),
+        gender: profileData.gender,
+        address: profileData.address,
+      };
+
+      // Call API
+      const res = await usersAPI.update(userId, updatedData);
+
+      // Optional UI update
+      if (res?.data?.success) {
+        alert("Profile updated successfully!");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error updating profile");
+    }
+  };
+
+  const handleSaveMedical = async () => {
+    try {
+      const userId = user?.id;
+      if (!userId) return alert("User ID missing");
+
+      // Prepare medical data to send to API
+      const updatedData = {
+        doshaType: medicalData.doshaType,
+        medicalHistory: medicalData.medicalHistory,
+        allergies: medicalData.allergies,
+        medications: medicalData.medications,
+        height: Number(medicalData.height),
+        weight: Number(medicalData.weight),
+        sleepPattern: medicalData.sleepPattern,
+        bowelMovement: medicalData.bowelMovement,
+        bloodGroup: medicalData.bloodGroup,
+        mealFrequency: medicalData.mealFrequency ? Number(medicalData.mealFrequency) : null,
+        waterIntake: medicalData.waterIntake ? Number(medicalData.waterIntake) : null,
+        notes: medicalData.notes,
+      };
+
+      // Call API
+      const res = await usersAPI.update(userId, updatedData);
+
+      if (res?.data?.success) {
+        alert("Medical information updated successfully!");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error updating medical information");
+    }
   };
 
   const handleChangePassword = async () => {
@@ -119,14 +185,20 @@ export function PatientSettings({ patient }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <h1 className="text-3xl">{t("patientSettings.title")}</h1>
-      <p className="text-muted-foreground">{t("patientSettings.subtitle")}</p>
+      <div className="space-y-1">
+        <h1 className="text-3xl font-semibold">{t("patientSettings.title")}</h1>
+        <p className="text-muted-foreground">{t("patientSettings.subtitle")}</p>
+      </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        {/* Updated to grid-cols-2 to fit both tabs */}
-        <TabsList className="grid grid-cols-2 w-full">
+        {/* Tabs */}
+        <TabsList className="grid grid-cols-3 w-full">
           <TabsTrigger value="profile">
             {t("patientSettings.tabs.profile")}
+          </TabsTrigger>
+          <TabsTrigger value="medical">
+            <Stethoscope className="w-4 h-4 mr-2" />
+            Medical
           </TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
@@ -141,157 +213,302 @@ export function PatientSettings({ patient }) {
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               {/* Avatar */}
               <div className="flex items-center space-x-4">
-                <Avatar className="w-20 h-20">
+                <Avatar className="w-24 h-24 ring-2 ring-primary">
                   <AvatarImage src={user?.avatar} />
-                  <AvatarFallback>
+                  <AvatarFallback className="text-xl font-bold">
                     {user?.name?.charAt(0)?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               </div>
 
-              {/* Name */}
-              <div>
-                <Label>{t("patientSettings.fields.name")}</Label>
-                <Input
-                  value={profileData.name}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, name: e.target.value })
-                  }
-                />
-              </div>
+              {/* 2-column Grid for cleaner layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Name */}
+                <div className="space-y-2">
+                  <Label>{t("patientSettings.fields.name")}</Label>
+                  <Input
+                    className="border border-gray-300"
+                    value={profileData.name}
+                    onChange={(e) =>
+                      setProfileData({ ...profileData, name: e.target.value })
+                    }
+                  />
+                </div>
 
-              {/* Email */}
-              <div>
-                <Label>{t("patientSettings.fields.email")}</Label>
-                <Input value={profileData.email} disabled />
-              </div>
+                {/* Email */}
+                <div className="space-y-2">
+                  <Label>{t("patientSettings.fields.email")}</Label>
+                  <Input
+                    className="border border-gray-300"
+                    value={profileData.email}
+                    disabled
+                  />
+                </div>
 
-              {/* Phone */}
-              <div>
-                <Label>{t("patientSettings.fields.phone")}</Label>
-                <Input
-                  value={profileData.phone}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, phone: e.target.value })
-                  }
-                />
-              </div>
+                {/* Phone */}
+                <div className="space-y-2">
+                  <Label>{t("patientSettings.fields.phone")}</Label>
+                  <Input
+                    className="border border-gray-300"
+                    value={profileData.phone}
+                    onChange={(e) =>
+                      setProfileData({ ...profileData, phone: e.target.value })
+                    }
+                  />
+                </div>
 
-              {/* Age */}
-              <div>
-                <Label>{t("patientSettings.fields.age")}</Label>
-                <Input
-                  type="number"
-                  value={profileData.age}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, age: e.target.value })
-                  }
-                />
-              </div>
+                {/* Age */}
+                <div className="space-y-2">
+                  <Label>{t("patientSettings.fields.age")}</Label>
+                  <Input
+                    className="border border-gray-300"
+                    type="number"
+                    value={profileData.age}
+                    onChange={(e) =>
+                      setProfileData({ ...profileData, age: e.target.value })
+                    }
+                  />
+                </div>
 
-              {/* Gender */}
-              <div>
-                <Label>{t("patientSettings.fields.gender")}</Label>
-                <Input
-                  value={profileData.gender}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, gender: e.target.value })
-                  }
-                />
-              </div>
+                {/* Gender */}
+                <div className="space-y-2">
+                  <Label>{t("patientSettings.fields.gender")}</Label>
+                  <Input
+                    className="border border-gray-300"
+                    value={profileData.gender}
+                    onChange={(e) =>
+                      setProfileData({ ...profileData, gender: e.target.value })
+                    }
+                  />
+                </div>
 
-              {/* Dosha */}
-              <div>
-                <Label>{t("patientSettings.fields.doshaType")}</Label>
-                <Input value={profileData.doshaType} disabled />
+                {/* Patient Code */}
+                <div className="space-y-2">
+                  <Label>{t("patientSettings.fields.patientCode")}</Label>
+                  <Input
+                    className="border border-gray-300"
+                    value={profileData.patientCode}
+                    disabled
+                  />
+                </div>
               </div>
 
               {/* Address */}
-              <div>
+              <div className="space-y-2">
                 <Label>{t("patientSettings.fields.address")}</Label>
                 <Textarea
                   value={profileData.address}
+                  className="border border-gray-300"
                   onChange={(e) =>
                     setProfileData({ ...profileData, address: e.target.value })
                   }
                 />
               </div>
 
-              {/* Height */}
-              <div>
-                <Label>{t("patientSettings.fields.height")}</Label>
-                <Input
-                  type="number"
-                  value={profileData.height}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, height: e.target.value })
-                  }
-                />
-              </div>
-
-              {/* Weight */}
-              <div>
-                <Label>{t("patientSettings.fields.weight")}</Label>
-                <Input
-                  type="number"
-                  value={profileData.weight}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, weight: e.target.value })
-                  }
-                />
-              </div>
-
-              {/* Sleep Pattern */}
-              <div>
-                <Label>{t("patientSettings.fields.sleepPattern")}</Label>
-                <Input
-                  value={profileData.sleepPattern}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData,
-                      sleepPattern: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              {/* Bowel Movement */}
-              <div>
-                <Label>{t("patientSettings.fields.bowelMovement")}</Label>
-                <Input
-                  value={profileData.bowelMovement}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData,
-                      bowelMovement: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              {/* Patient Code */}
-              <div>
-                <Label>{t("patientSettings.fields.patientCode")}</Label>
-                <Input value={profileData.patientCode} disabled />
-              </div>
-
               {/* Created At */}
-              <div>
-                <Label>{t("patientSettings.fields.createdAt")}</Label>
-                <Input value={profileData.createdAt} disabled />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label>{t("patientSettings.fields.createdAt")}</Label>
+                  <Input
+                    className="border border-gray-300"
+                    value={profileData.createdAt}
+                    disabled
+                  />
+                </div>
               </div>
 
-              <Button onClick={handleSaveProfile}>
+              <Button className="mt-4" onClick={handleSaveProfile}>
                 {t("patientSettings.actions.saveChanges")}
               </Button>
             </CardContent>
           </Card>
         </TabsContent>
-        {/* Security Tab */}
-        <TabsContent value="security" className="space-y-6">
+
+        {/* ------------------ MEDICAL TAB ------------------ */}
+        <TabsContent value="medical">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Stethoscope className="w-5 h-5 mr-2 text-primary" />
+                Medical Information
+              </CardTitle>
+              <CardDescription>
+                Manage your medical records and health information
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+              {/* 2-column Grid for medical data */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Dosha Type */}
+                <div className="space-y-2">
+                  <Label>Dosha Type</Label>
+                  <Input
+                    className="border border-gray-300"
+                    value={medicalData.doshaType}
+                    onChange={(e) =>
+                      setMedicalData({ ...medicalData, doshaType: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Blood Group */}
+                <div className="space-y-2">
+                  <Label>Blood Group</Label>
+                  <Input
+                    className="border border-gray-300"
+                    value={medicalData.bloodGroup}
+                    onChange={(e) =>
+                      setMedicalData({ ...medicalData, bloodGroup: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Height */}
+                <div className="space-y-2">
+                  <Label>Height (cm)</Label>
+                  <Input
+                    className="border border-gray-300"
+                    type="number"
+                    value={medicalData.height}
+                    onChange={(e) =>
+                      setMedicalData({ ...medicalData, height: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Weight */}
+                <div className="space-y-2">
+                  <Label>Weight (kg)</Label>
+                  <Input
+                    className="border border-gray-300"
+                    type="number"
+                    value={medicalData.weight}
+                    onChange={(e) =>
+                      setMedicalData({ ...medicalData, weight: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Meal Frequency */}
+                <div className="space-y-2">
+                  <Label>Meal Frequency (per day)</Label>
+                  <Input
+                    className="border border-gray-300"
+                    type="number"
+                    value={medicalData.mealFrequency}
+                    onChange={(e) =>
+                      setMedicalData({ ...medicalData, mealFrequency: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Water Intake */}
+                <div className="space-y-2">
+                  <Label>Water Intake (liters per day)</Label>
+                  <Input
+                    className="border border-gray-300"
+                    type="number"
+                    step="0.1"
+                    value={medicalData.waterIntake}
+                    onChange={(e) =>
+                      setMedicalData({ ...medicalData, waterIntake: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Sleep Pattern */}
+                <div className="space-y-2">
+                  <Label>Sleep Pattern</Label>
+                  <Input
+                    className="border border-gray-300"
+                    value={medicalData.sleepPattern}
+                    onChange={(e) =>
+                      setMedicalData({ ...medicalData, sleepPattern: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Bowel Movement */}
+                <div className="space-y-2">
+                  <Label>Bowel Movement</Label>
+                  <Input
+                    className="border border-gray-300"
+                    value={medicalData.bowelMovement}
+                    onChange={(e) =>
+                      setMedicalData({ ...medicalData, bowelMovement: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Text areas for longer medical information */}
+              <div className="space-y-4">
+                {/* Medical History */}
+                <div className="space-y-2">
+                  <Label>Medical History</Label>
+                  <Textarea
+                    value={medicalData.medicalHistory}
+                    className="border border-gray-300"
+                    placeholder="Any past medical conditions, surgeries, or chronic illnesses"
+                    onChange={(e) =>
+                      setMedicalData({ ...medicalData, medicalHistory: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Allergies */}
+                <div className="space-y-2">
+                  <Label>Allergies</Label>
+                  <Textarea
+                    value={medicalData.allergies}
+                    className="border border-gray-300"
+                    placeholder="Any known allergies to medications, food, or environmental factors"
+                    onChange={(e) =>
+                      setMedicalData({ ...medicalData, allergies: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Medications */}
+                <div className="space-y-2">
+                  <Label>Current Medications</Label>
+                  <Textarea
+                    value={medicalData.medications}
+                    className="border border-gray-300"
+                    placeholder="List of current medications, supplements, or treatments"
+                    onChange={(e) =>
+                      setMedicalData({ ...medicalData, medications: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Notes */}
+                <div className="space-y-2">
+                  <Label>Additional Notes</Label>
+                  <Textarea
+                    value={medicalData.notes}
+                    className="border border-gray-300"
+                    placeholder="Any other relevant health information or concerns"
+                    onChange={(e) =>
+                      setMedicalData({ ...medicalData, notes: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <Button className="mt-4" onClick={handleSaveMedical}>
+                Save Medical Information
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ------------------ SECURITY TAB ------------------ */}
+        <TabsContent value="security" className="space-y-8">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -302,15 +519,18 @@ export function PatientSettings({ patient }) {
                 Manage your account security and privacy
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-lg">Change Password</h3>
 
+            <CardContent className="space-y-8">
+              {/* Change Password */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-medium">Change Password</h3>
+
+                {/* Current Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="current-password">Current Password</Label>
+                  <Label>Current Password</Label>
                   <div className="relative">
                     <Input
-                      id="current-password"
+                      className="border border-gray-300"
                       type={showPassword ? "text" : "password"}
                       value={security.currentPassword}
                       onChange={(e) =>
@@ -336,11 +556,12 @@ export function PatientSettings({ patient }) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* New + Confirm Password */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="new-password">New Password</Label>
+                    <Label>New Password</Label>
                     <Input
-                      id="new-password"
+                      className="border border-gray-300"
                       type="password"
                       value={security.newPassword}
                       onChange={(e) =>
@@ -353,11 +574,9 @@ export function PatientSettings({ patient }) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password">
-                      Confirm New Password
-                    </Label>
+                    <Label>Confirm New Password</Label>
                     <Input
-                      id="confirm-password"
+                      className="border border-gray-300"
                       type="password"
                       value={security.confirmPassword}
                       onChange={(e) =>
@@ -370,27 +589,25 @@ export function PatientSettings({ patient }) {
                   </div>
                 </div>
 
-                <Button onClick={handleChangePassword} variant="outline">
+                <Button variant="outline" onClick={handleChangePassword}>
                   Change Password
                 </Button>
               </div>
 
               <Separator />
 
+              {/* Additional Security */}
               <div className="space-y-4">
-                <h3 className="text-lg">Additional Security</h3>
+                <h3 className="text-lg font-medium">Additional Security</h3>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="two-factor">
-                      Two-Factor Authentication
-                    </Label>
+                    <Label>Two-Factor Authentication</Label>
                     <p className="text-sm text-muted-foreground">
                       Add an extra layer of security to your account
                     </p>
                   </div>
                   <Switch
-                    id="two-factor"
                     checked={security.twoFactorAuth}
                     onCheckedChange={(checked) =>
                       setSecurity({ ...security, twoFactorAuth: checked })
@@ -399,9 +616,7 @@ export function PatientSettings({ patient }) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="session-timeout">
-                    Session Timeout (minutes)
-                  </Label>
+                  <Label>Session Timeout (minutes)</Label>
                   <Select
                     value={security.sessionTimeout}
                     onValueChange={(value) =>
