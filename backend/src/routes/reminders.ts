@@ -16,6 +16,8 @@ router.get('/', validateQuery(paginationSchema), reminderController.getAllRemind
 // Create new reminder
 router.post('/', validateRequest(createReminderSchema), reminderController.createReminder);
 
+router.get('/user/:id', validateParams(idSchema), reminderController.getRemindersByUser);
+
 // Get reminder by ID
 router.get('/:id', validateParams(idSchema), reminderController.getReminderById);
 
