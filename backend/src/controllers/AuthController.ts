@@ -125,62 +125,114 @@ export class AuthController {
     }
   }
 
-  async getMe(req: AuthRequest, res: Response): Promise<void> {
-    try {
-      const userId = req.user!.userId;
+async getMe(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: "Unauthorized"
+      });
+      return;
+    }
 
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
+    const userId = req.user.userId;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatar: true,
+        phone: true,
+        address: true,
+        isActive: true,
+        specialization: true,
+        licenseNumber: true,
+        experience: true,
+        clinicName: true,
+        clinicAddress: true,
+
+        age: true,
+        gender: true,
+        doshaType: true,
+        medicalHistory: true,
+        allergies: true,
+        medications: true,
+
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+      return;
+    }
+
+    let patient = null;
+
+    // PATIENT → get patient details
+    if (user.role === "PATIENT") {
+      patient = await prisma.patient.findUnique({
+        where: { userId },
         select: {
           id: true,
-          name: true,
-          email: true,
-          role: true,
-          avatar: true,
-          phone: true,
-          address: true,
-          isActive: true,
-          specialization: true,
-          licenseNumber: true,
-          experience: true,
-          age: true,
-          gender: true,
-          doshaType: true,
-          medicalHistory: true,
-          allergies: true,
-          medications: true,
+          doctorId: true,
+          patientCode: true,
+          height: true,
+          weight: true,
+          sleepPattern: true,
+          bowelMovement: true,
+          bloodGroup: true,
+          mealFrequency: true,
+          waterIntake: true,
+          notes: true,
           createdAt: true,
           updatedAt: true
         }
       });
-
-      if (!user) {
-        const response: ApiResponse = {
-          success: false,
-          message: 'User not found'
-        };
-        res.status(404).json(response);
-        return;
-      }
-
-      const response: ApiResponse<UserResponse> = {
-        success: true,
-        message: 'User profile retrieved successfully',
-        data: user
-      };
-
-      res.json(response);
-      return;
-    } catch (error) {
-      const response: ApiResponse = {
-        success: false,
-        message: 'Error retrieving user profile',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-      res.status(500).json(response);
-      return;
     }
+
+    // DOCTOR → get doctor patients
+    if (user.role === "DOCTOR") {
+      patient = await prisma.patient.findMany({
+        where: { doctorId: userId },
+        select: {
+          id: true,
+          patientCode: true,
+          user: {
+            select: { name: true, email: true, gender: true, age: true, avatar: true }
+          }
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "User profile retrieved successfully",
+      data: {
+        ...user,
+        patient
+      }
+    });
+    return;
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error retrieving user profile",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+    return;
   }
+}
+
+
 
   async refreshToken(req: Request, res: Response): Promise<void> {
     try {

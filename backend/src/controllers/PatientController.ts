@@ -241,7 +241,7 @@ export class PatientController {
 
       const dietPlans = await prisma.dietPlan.findMany({
         where: { patientId: patient.userId },
-        include: { items: { include: { food: true, recipe: true } } },
+        include: { items: { include: { food: true } } },
       });
 
       const response: ApiResponse = {

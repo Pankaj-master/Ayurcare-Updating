@@ -60,6 +60,8 @@ model User {
   specialization String?
   licenseNumber  String?
   experience     Int?
+  clinicName     String?
+  clinicAddress  String?
 
   // Patient specific fields
   age            Int?
@@ -96,6 +98,10 @@ model Patient {
   weight         Float?
   sleepPattern   String?
   bowelMovement  String?
+  bloodGroup     String?
+  mealFrequency  Int?
+  waterIntake    Float?
+  notes          String?
 
   // Relations
   user         User   @relation("UserPatientProfile", fields: [userId], references: [id], onDelete: Cascade)
@@ -107,31 +113,50 @@ model Patient {
 
 
 model Food {
-  id          String        @id @default(cuid())
-  name        String
-  description String?
-  category    FoodCategory
-  calories    Float?
-  protein     Float?
-  carbs       Float?
-  fat         Float?
-  fiber       Float?
-  vitamins    String? // JSON string for vitamins
-  minerals    String? // JSON string for minerals
-  doshaEffects String? // JSON string for dosha effects
-  benefits    String? // JSON string for health benefits
-  precautions String? // JSON string for precautions
-  imageUrl    String?
-  isActive    Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  category      FoodCategory
+
+  // Nutrition
+  calories      Float?
+  protein       Float?
+  carbs         Float?
+  fat           Float?
+  fiber         Float?
+  vitamins      String?      // JSON string
+  minerals      String?      // JSON string
+  doshaEffects  String?      // JSON: effects on Vata/Pitta/Kapha
+  benefits      String?      // JSON: health benefits
+  precautions   String?      // JSON: avoid if...
+
+  imageUrl      String?
+  isActive      Boolean     @default(true)
+
+  // ⭐ Added fields to make Food act like a Recipe
+  isRecipe      Boolean     @default(false) // true = treat as recipe/meal
+  ingredients   String?                  // JSON list of ingredients
+  instructions  String?                  // preparation steps
+  prepTime      Int?                     // minutes
+  cookTime      Int?
+  servings      Int?
+  dietaryNotes  String?                  // Ayurveda-specific notes
+
+  rasa          String?
+  virya         String?
+  guna          String?
+  vipaka        String?
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   // Relations
   dietPlanItems DietPlanItem[]
-  recipeItems   RecipeItem[]
+  recipeItems   RecipeItem[] // kept for compatibility but unused
 
   @@map("foods")
 }
+
 
 model Recipe {
   id          String   @id @default(cuid())
@@ -149,7 +174,6 @@ model Recipe {
 
   // Relations
   items RecipeItem[]
-  dietPlanItems DietPlanItem[]
 
   @@map("recipes")
 }
@@ -175,12 +199,11 @@ model DietPlan {
   doctorId    String
   patientId   String?
   doshaType   DoshaType?
-  duration    Int? // in days
+  duration    Int?     @default(1)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relations
   doctor  User         @relation("CreatedDietPlans", fields: [doctorId], references: [id])
   patient User?        @relation("PatientDietPlans", fields: [patientId], references: [id])
   items   DietPlanItem[]
@@ -188,22 +211,27 @@ model DietPlan {
   @@map("diet_plans")
 }
 
+
 model DietPlanItem {
   id         String   @id @default(cuid())
   dietPlanId String
   foodId     String?
-  recipeId   String?
+
   mealType   MealType
   quantity   Float?
   unit       String?
   notes      String?
-  dayOfWeek  Int? // 1-7 for Monday-Sunday
-  time       String? // HH:MM format
 
-  // Relations
-  dietPlan DietPlan @relation(fields: [dietPlanId], references: [id], onDelete: Cascade)
-  food     Food?    @relation(fields: [foodId], references: [id])
-  recipe   Recipe?  @relation(fields: [recipeId], references: [id])
+  // ⭐ New field for multi-day diet plans
+  dayNumber  Int       @default(1)
+
+  dayOfWeek  Int?      // optional: Monday–Sunday (1–7)
+  time       String?   // HH:MM format
+
+  totals      Json?
+
+  dietPlan   DietPlan  @relation(fields: [dietPlanId], references: [id], onDelete: Cascade)
+  food       Food?     @relation(fields: [foodId], references: [id])
 
   @@map("diet_plan_items")
 }
@@ -247,21 +275,27 @@ model ChatMessage {
 }
 
 model Reminder {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  message   String
-  date      DateTime
-  time      String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String      @id @default(cuid())
+  userId        String
+  title         String
+  message       String?     // replacing ‘description’
+  description   String?     // new field
+  type          String?     // meal, medicine, activity, hydration
+  frequency     String?     // daily, weekdays, weekends, custom
+  days          String[]   @default([])
+  lastTriggered DateTime?
+  nextTrigger   DateTime?
+  date          DateTime?   // optional, may not be needed
+  time          String
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
-  // Relations
   user User @relation("UserReminders", fields: [userId], references: [id])
 
   @@map("reminders")
 }
+
 
 model Collection {
   id          String   @id @default(cuid())

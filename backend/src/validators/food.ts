@@ -12,9 +12,15 @@ export const createFoodSchema = Joi.object({
   vitamins: Joi.string().optional(),
   minerals: Joi.string().optional(),
   doshaEffects: Joi.string().optional(),
+  rasa: Joi.string().optional(),
+  virya: Joi.string().optional(),
+  guna: Joi.string().optional(),
+  vipaka: Joi.string().optional(),
   benefits: Joi.string().optional(),
   precautions: Joi.string().optional(),
-  imageUrl: Joi.string().optional()
+  imageUrl: Joi.string().optional(),
+  dietaryNotes: Joi.string().optional(),
+  isActive: Joi.boolean().optional().default(true)
 });
 
 export const updateFoodSchema = Joi.object({
@@ -31,7 +37,12 @@ export const updateFoodSchema = Joi.object({
   doshaEffects: Joi.string().optional(),
   benefits: Joi.string().optional(),
   precautions: Joi.string().optional(),
+  rasa: Joi.string().optional(),
+  virya: Joi.string().optional(),
+  guna: Joi.string().optional(),
+  vipaka: Joi.string().optional(),
   imageUrl: Joi.string().optional(),
+  dietaryNotes: Joi.string().optional(),
   isActive: Joi.boolean().optional()
 });
 

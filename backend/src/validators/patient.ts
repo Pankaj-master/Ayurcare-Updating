@@ -27,7 +27,13 @@ export const createPatientSchema = Joi.object({
 });
 
 export const updatePatientSchema = Joi.object({
-  patientCode: Joi.string().optional()
+  patientCode: Joi.string().optional(),
+  height: Joi.number().positive().optional(),
+  weight: Joi.number().positive().optional(),
+  sleepPattern: Joi.string().optional(),
+  bowelMovement: Joi.string().optional(),
+  doshaType: Joi.string().valid('VATA', 'PITTA', 'KAPHA', 'TRIDOSHA').optional(),
+
 });
 
 export const paginationSchema = Joi.object({
