@@ -33,7 +33,7 @@ router.get('/stats/count', authorizeRoles('DOCTOR'), patientController.getPatien
 router.get('/:id', validateParams(idSchema), patientController.getPatientById);
 
 // Update patient (Doctor only)
-router.put('/:id', authorizeRoles('DOCTOR'), validateParams(idSchema), validateRequest(updatePatientSchema), patientController.updatePatient);
+router.put('/:id', validateParams(idSchema), validateRequest(updatePatientSchema), patientController.updatePatient);
 
 // Delete patient (Doctor only)
 router.delete('/:id', authorizeRoles('DOCTOR'), validateParams(idSchema), patientController.deletePatient);

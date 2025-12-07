@@ -211,6 +211,11 @@ export const chatAPI = {
 
   getConversation: (userId: string, params?: any) =>
     api.get(`/chat/conversation/${userId}`, { params }),
+
+  getChatSummary: (params?: any) => api.get("/chat/summaries", { params }),
+
+  getUnreadSummary: (userId: string, params?: any) =>
+    api.get(`/chat/unread/${userId}`, { params }),
 };
 
 // Reminders API

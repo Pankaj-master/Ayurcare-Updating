@@ -172,6 +172,59 @@ export class ChatController {
     }
   }
 
+  async getUnreadSummary(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { userId } = req.params; // The person who sent the messages (the "other" user)
+      const currentUserId = req.user!.userId; // You (the receiver)
+
+      // 1. Define the condition for unread messages
+      // We only want messages sent BY the other user TO the current user that are NOT read.
+      const unreadWhereInput = {
+        senderId: userId,
+        receiverId: currentUserId,
+        isRead: false, // Assumes you have this boolean in your schema
+      };
+
+      // 2. Run Count and Find in a single transaction for performance
+      const [unreadCount, unreadMessages] = await prisma.$transaction([
+        // Operation A: Get the total count
+        prisma.chatMessage.count({
+          where: unreadWhereInput,
+        }),
+        // Operation B: Get the latest 5 unread messages
+        prisma.chatMessage.findMany({
+          where: unreadWhereInput,
+          take: 5, // Limit to 5
+          orderBy: { createdAt: "desc" }, // Show the newest unread messages first
+          include: {
+            sender: { select: { id: true, name: true, role: true } },
+          },
+        }),
+      ]);
+
+      const response: ApiResponse = {
+        success: true,
+        message: "Unread summary retrieved successfully",
+        data: {
+          count: unreadCount,
+          preview: unreadMessages,
+        },
+      };
+
+      res.json(response);
+      return;
+    } catch (error) {
+      console.error("Error getting unread summary:", error);
+      const response: ApiResponse = {
+        success: false,
+        message: "Error retrieving unread summary",
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+      res.status(500).json(response);
+      return;
+    }
+  }
+
   async markAsRead(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;

@@ -22,7 +22,7 @@ router.get('/summaries', validateQuery(paginationSchema), chatController.getChat
 // Get conversation between users
 router.get('/conversation/:userId', validateParams(idSchema), validateQuery(paginationSchema), chatController.getConversation);
 
-
+router.get('/unread/:userId', validateParams(idSchema), validateQuery(paginationSchema), chatController.getUnreadSummary);
 
 // Get message by ID
 router.get('/:id', validateParams(idSchema), chatController.getMessageById);

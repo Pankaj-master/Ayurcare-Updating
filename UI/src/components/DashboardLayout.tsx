@@ -47,12 +47,19 @@ const doctorNavigationItems = (t: any) => [
     path: "/dashboard",
   },
   { id: "patients", label: t("sidebar.patients"), icon: Users, path: "/patients" },
-  {
-    id: "diet-chart",
-    label: t("sidebar.dietChart"),
-    icon: PieChart,
-    path: "/diet-chart",
-  },
+  // {
+  //   id: "diet-chart",
+  //   label: t("sidebar.dietChart"),
+  //   icon: PieChart,
+  //   path: "/diet-chart",
+  // },
+  // {
+  //   id: "diet-plans",
+  //   label: t("sidebar.dietPlans"),
+  //   icon: Bookmark,
+  //   path: "/diet-plans",
+  // },
+  { id: "create-diet-plans", label: t("sidebar.dietPlans"), icon: ChefHat, path: "/create-diet-plans" },
   {
     id: "auto-generate",
     label: t("sidebar.autoGenerate"),
@@ -81,6 +88,12 @@ const patientNavigationItems = (t: any) => [
     label: t("sidebar.dietHistory"),
     icon: History,
     path: "/diet-history",
+  },
+  {
+    id: "diet-chart",
+    label: t("sidebar.dietChart"),
+    icon: PieChart,
+    path: "/diet-chart",
   },
   { id: "chat", label: t("sidebar.chatWithDoctor"), icon: MessageCircle, path: "/chat" },
   { id: "reports", label: t("sidebar.reports"), icon: BarChart3, path: "/reports" },

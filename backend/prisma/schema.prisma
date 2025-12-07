@@ -142,6 +142,7 @@ model Food {
   servings      Int?
   dietaryNotes  String?                  // Ayurveda-specific notes
 
+  // ayurvedic field
   rasa          String?
   virya         String?
   guna          String?
