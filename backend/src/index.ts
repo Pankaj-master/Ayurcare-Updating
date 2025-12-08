@@ -19,18 +19,19 @@ import dietPlanRoutes from './routes/dietPlans';
 import chatRoutes from './routes/chat';
 import reminderRoutes from './routes/reminders';
 import healthRecordRoutes from './routes/healthRecords';
+import translateRoute from './routes/translate'; // <-- added
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '5000', 10);
 
 // Create HTTP server and bind express to it
-const server = http.createServer(app); // 👈 REPLACED app.listen()
+const server = http.createServer(app);
 
 // SOCKET.IO INSTANCE 🚀
-export const io = new Server(server, {   // 👈 Socket.io initialized here
+export const io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_URL || "http://localhost:5173",
     credentials: true,
@@ -66,7 +67,7 @@ const limiter = rateLimit({
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.'
 });
-if (process.env.NODE_ENV === 'production') {  //either remove the if statement in deployment and add keep app.use limiter outsideor set NODE_ENV to production
+if (process.env.NODE_ENV === 'production') {
   app.use(limiter);
 }
 
@@ -104,18 +105,18 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/reminders', reminderRoutes);
 app.use('/api/health-records', healthRecordRoutes);
 
+// Translate route (Google Cloud Translate wrapper)
+app.use('/api/translate', translateRoute); // <-- new
+
 // Error handling middleware
 app.use(notFound);
 app.use(errorHandler);
 
 // Start server
-// Start server
-server.listen(5000, "0.0.0.0", () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
-
 export default app;
-

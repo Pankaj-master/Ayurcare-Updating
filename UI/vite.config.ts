@@ -57,5 +57,15 @@ export default defineConfig({
     host: true,
     port: 3000,
     open: true,
+    // ← ADD THIS proxy block so /api calls are forwarded to your backend
+    proxy: {
+      "/api": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+        // optional rewrite if your backend path differs; keep as-is for /api/translate
+        rewrite: (path) => path.replace(/^\/api/, "/api"),
+      },
+    },
   },
 });
