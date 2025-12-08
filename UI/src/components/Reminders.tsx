@@ -244,15 +244,15 @@ return (
     {/* Header */}
     <div className="flex justify-between items-center">
       <div>
-        <h1 className="text-3xl text-foreground">{t("reminders.title")}</h1>
-        <p className="text-muted-foreground">{t("reminders.subtitle")}</p>
+        <h1 className="text-3xl text-foreground">Reminders</h1>
+        <p className="text-muted-foreground">Create and manage reminders for meals, meds and activities</p>
       </div>
       <Button 
         onClick={() => setShowAddForm(true)}
         className="bg-primary hover:bg-primary/90"
       >
         <Plus className="w-4 h-4 mr-2" />
-        {t("reminders.addReminder")}
+        Add Reminder
       </Button>
     </div>
 
@@ -261,16 +261,16 @@ return (
       <div className="flex gap-4">
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder={t("reminders.filterPlaceholder")} />
+            <SelectValue placeholder="Filter reminders" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t("reminders.filters.all")}</SelectItem>
-            <SelectItem value="active">{t("reminders.filters.active")}</SelectItem>
-            <SelectItem value="inactive">{t("reminders.filters.inactive")}</SelectItem>
-            <SelectItem value="meal">{t("reminders.filters.meal")}</SelectItem>
-            <SelectItem value="medicine">{t("reminders.filters.medicine")}</SelectItem>
-            <SelectItem value="activity">{t("reminders.filters.activity")}</SelectItem>
-            <SelectItem value="hydration">{t("reminders.filters.hydration")}</SelectItem>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="meal">Meal</SelectItem>
+            <SelectItem value="medicine">Medicine</SelectItem>
+            <SelectItem value="activity">Activity</SelectItem>
+            <SelectItem value="hydration">Hydration</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -278,17 +278,17 @@ return (
       {/* Summary Stats */}
       <div className="flex items-center space-x-6 text-sm">
         <div className="text-center">
-          <p className="text-muted-foreground">{t("reminders.total")}</p>
+          <p className="text-muted-foreground">Total</p>
           <p className="text-xl">{reminders.length}</p>
         </div>
         <div className="text-center">
-          <p className="text-muted-foreground">{t("reminders.active")}</p>
+          <p className="text-muted-foreground">Active</p>
           <p className="text-xl text-green-600">
             {reminders.filter(r => r.isActive).length}
           </p>
         </div>
         <div className="text-center">
-          <p className="text-muted-foreground">{t("reminders.today")}</p>
+          <p className="text-muted-foreground">Today</p>
           <p className="text-xl text-blue-600">
             {reminders.filter(r => r.isActive && r.frequency === 'daily').length}
           </p>
@@ -301,10 +301,10 @@ return (
       <Card>
         <CardHeader>
           <CardTitle>
-            {editingReminder ? t("reminders.editReminder") : t("reminders.addNewReminder")}
+            {editingReminder ? "Edit Reminder" : "Add New Reminder"}
           </CardTitle>
           <CardDescription>
-            {t("reminders.formDescription")}
+            Configure reminder time, type and frequency
           </CardDescription>
         </CardHeader>
 
@@ -313,17 +313,17 @@ return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <div className="space-y-2">
-              <Label htmlFor="title">{t("reminders.form.title")}</Label>
+              <Label htmlFor="title">Title</Label>
               <Input
                 id="title"
-                placeholder={t("reminders.form.titlePlaceholder")}
+                placeholder="Reminder title"
                 value={formData.title}
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="time">{t("reminders.form.time")}</Label>
+              <Label htmlFor="time">Time</Label>
               <Input
                 id="time"
                 type="time"
@@ -333,15 +333,15 @@ return (
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="type">{t("reminders.form.type")}</Label>
+              <Label htmlFor="type">Type</Label>
               <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value})}>
                 <SelectTrigger>
-                  <SelectValue placeholder={t("reminders.form.type")} />
+                  <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
                   {reminderTypes.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
-                      {t(`reminders.types.${type.value}`)}
+                      {type.value}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -349,7 +349,7 @@ return (
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="frequency">{t("reminders.form.frequency")}</Label>
+              <Label htmlFor="frequency">Frequency</Label>
               <Select value={formData.frequency} onValueChange={(value) => setFormData({...formData, frequency: value})}>
                 <SelectTrigger>
                   <SelectValue />
@@ -357,7 +357,7 @@ return (
                 <SelectContent>
                   {frequencyOptions.map((freq) => (
                     <SelectItem key={freq.value} value={freq.value}>
-                      {t(`reminders.frequency.${freq.value}`)}
+                      {freq.value}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -366,10 +366,10 @@ return (
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">{t("reminders.form.description")}</Label>
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              placeholder={t("reminders.form.descriptionPlaceholder")}
+              placeholder="Optional details"
               value={formData.description}
               onChange={(e) => setFormData({...formData, description: e.target.value})}
               rows={2}
@@ -382,15 +382,15 @@ return (
               checked={formData.isActive}
               onCheckedChange={(checked) => setFormData({...formData, isActive: checked})}
             />
-            <Label htmlFor="active">{t("reminders.form.active")}</Label>
+            <Label htmlFor="active">Active</Label>
           </div>
 
           <div className="flex items-center space-x-2">
             <Button onClick={saveReminder} className="bg-primary hover:bg-primary/90">
-              {editingReminder ? t("reminders.update") : t("reminders.save")}
+              {editingReminder ? "Update" : "Save"}
             </Button>
             <Button onClick={resetForm} variant="outline">
-              {t("common.cancel")}
+              Cancel
             </Button>
           </div>
 
@@ -418,7 +418,7 @@ return (
                       <Clock className="w-3 h-3" />
                       <span>{formatTime(reminder.time)}</span>
                       <Badge className={`text-xs ${typeColors[reminder.type]}`}>
-                        {t(`reminders.types.${reminder.type}`)}
+                        {reminder.type}
                       </Badge>
                     </div>
                   </div>
@@ -439,12 +439,12 @@ return (
 
                 <div className="flex items-center justify-between text-sm">
                   <div>
-                    <span className="text-muted-foreground">{t("reminders.frequencyLabel")} </span>
-                    <span className="capitalize">{t(`reminders.frequency.${reminder.frequency}`)}</span>
+                    <span className="text-muted-foreground">Frequency </span>
+                    <span className="capitalize">{reminder.frequency}</span>
                   </div>
 
                   <div>
-                    <span className="text-muted-foreground">{t("reminders.next")} </span>
+                    <span className="text-muted-foreground">Next </span>
                     <span>{getNextTriggerTime(reminder)}</span>
                   </div>
                 </div>
@@ -456,7 +456,7 @@ return (
                     onClick={() => editReminder(reminder)}
                   >
                     <Edit className="w-3 h-3 mr-1" />
-                    {t("common.edit")}
+                    Edit
                   </Button>
 
                   <Button 
@@ -466,7 +466,7 @@ return (
                     className="text-destructive hover:text-destructive"
                   >
                     <Trash2 className="w-3 h-3 mr-1" />
-                    {t("common.delete")}
+                    Delete
                   </Button>
                 </div>
 
@@ -483,15 +483,14 @@ return (
           <Bell className="w-8 h-8 text-muted-foreground" />
         </div>
         <h3 className="text-lg text-muted-foreground mb-2">
-          {t("reminders.noReminders")}
+          No reminders
         </h3>
         <p className="text-sm text-muted-foreground">
-          {t("reminders.noRemindersSub")}
+          You have no reminders set.
         </p>
       </div>
     )}
 
   </div>
 );
-
 }

@@ -115,269 +115,223 @@ export function DoctorDashboard() {
     "Vata-Kapha": "bg-teal-100 text-teal-800",
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl text-foreground">{t("dashboard.title")}</h1>
-          <p className="text-muted-foreground">
-            {t("dashboard.welcomeMessage")}
-          </p>
-        </div>
-        <Button
-          onClick={() => navigate("/patients")}
-          className="bg-primary hover:bg-primary/90"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          {t("dashboard.addPatient")}
-        </Button>
+return (
+  <div className="space-y-6">
+    {/* Header */}
+    <div className="flex justify-between items-center">
+      <div>
+        <h1 className="text-3xl text-foreground">Dashboard</h1>
+        <p className="text-muted-foreground">Welcome to your dashboard</p>
       </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  {t("doctorDashboard.totalPatients")}
-                </p>
-                <p className="text-2xl">{stats.totalPatients}</p>
-              </div>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  {t("doctorDashboard.dietPlansCreated")}
-                </p>
-                <p className="text-2xl">{stats.dietPlansCreated}</p>
-              </div>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <FileText className="w-6 h-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  {t("doctorDashboard.consultationsToday")}
-                </p>
-                <p className="text-2xl">{stats.consultationsToday}</p>
-              </div>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  {t("doctorDashboard.unreadMessages")}
-                </p>
-                <p className="text-2xl">{stats.unreadMessages}</p>
-              </div>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <MessageCircle className="w-6 h-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Today's Patients */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calendar className="w-5 h-5 mr-2 text-primary" />
-              {t("doctorDashboard.todaysPatients")}
-            </CardTitle>
-            <CardDescription>
-              {t("doctorDashboard.todaysDescription")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {todayPatients.map((patient: any) => (
-              <div
-                key={patient.id}
-                className="flex items-center justify-between p-3 rounded-lg border"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <p className="text-sm">{patient.name}</p>
-                    <Badge className={`text-xs ${doshaColors[patient.dosha]}`}>
-                      {patient.dosha}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                    <span className="flex items-center">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {patient.time}
-                    </span>
-                    <span>{patient.type}</span>
-                  </div>
-                </div>
-                <Badge
-                  variant={
-                    patient.status === "confirmed" ? "default" : "secondary"
-                  }
-                >
-                  {patient.status}
-                </Badge>
-              </div>
-            ))}
-            <Button variant="outline" className="w-full">
-              {t("doctorDashboard.viewAllAppointments")}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Recent Plans */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <FileText className="w-5 h-5 mr-2 text-primary" />
-              {t("doctorDashboard.recentPlans")}
-            </CardTitle>
-            <CardDescription>
-              {t("doctorDashboard.recentPlansDescription")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {recentPlans.map((plan: any) => (
-              <div
-                key={plan.id}
-                className="flex items-center justify-between p-3 rounded-lg border"
-              >
-                <div className="space-y-1">
-                  <p className="text-sm">{plan.patientName}</p>
-                  <p className="text-xs text-muted-foreground">{plan.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {plan.createdAt}
-                  </p>
-                </div>
-                <Badge
-                  variant={plan.status === "active" ? "default" : "secondary"}
-                >
-                  {plan.status}
-                </Badge>
-              </div>
-            ))}
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => navigate("/diet-chart")}
-            >
-              {t("doctorDashboard.viewAllPlans")}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Pending Tasks + Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Activity className="w-5 h-5 mr-2 text-primary" />
-              {t("doctorDashboard.pendingTasks")}
-            </CardTitle>
-            <CardDescription>
-              {t("doctorDashboard.pendingTasksDescription")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {pendingTasks.map((task) => (
-              <div
-                key={task.id}
-                className="flex items-center justify-between p-3 rounded-lg border"
-              >
-                <div className="space-y-1">
-                  <p className="text-sm">{task.task}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {task.dueTime}
-                  </p>
-                </div>
-                <Badge
-                  variant={
-                    task.priority === "high"
-                      ? "destructive"
-                      : task.priority === "medium"
-                      ? "default"
-                      : "secondary"
-                  }
-                >
-                  {task.priority}
-                </Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("doctorDashboard.quickActions")}</CardTitle>
-            <CardDescription>
-              {t("doctorDashboard.quickActionsDescription")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => navigate("/patients")}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {t("doctorDashboard.addNewPatient")}
-            </Button>
-
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => navigate("/diet-chart")}
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              {t("doctorDashboard.createDietPlan")}
-            </Button>
-
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => navigate("/auto-generate")}
-            >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              {t("doctorDashboard.autoGenerateDiet")}
-            </Button>
-
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => navigate("/food-database")}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {t("doctorDashboard.addFoodItem")}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <Button
+        onClick={() => navigate("/patients")}
+        className="bg-primary hover:bg-primary/90"
+      >
+        <Plus className="w-4 h-4 mr-2" />
+        Add Patient
+      </Button>
     </div>
-  );
+
+    {/* Stats Cards */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Total Patients</p>
+              <p className="text-2xl">{stats.totalPatients}</p>
+            </div>
+            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+              <Users className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Diet Plans Created</p>
+              <p className="text-2xl">{stats.dietPlansCreated}</p>
+            </div>
+            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+              <FileText className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Consultations Today</p>
+              <p className="text-2xl">{stats.consultationsToday}</p>
+            </div>
+            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Unread Messages</p>
+              <p className="text-2xl">{stats.unreadMessages}</p>
+            </div>
+            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+              <MessageCircle className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+
+    {/* Today's Patients */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Calendar className="w-5 h-5 mr-2 text-primary" />
+            Today's Patients
+          </CardTitle>
+          <CardDescription>Today's patient appointments</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {todayPatients.map((patient: any) => (
+            <div
+              key={patient.id}
+              className="flex items-center justify-between p-3 rounded-lg border"
+            >
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <p className="text-sm">{patient.name}</p>
+                  <Badge className={`text-xs ${doshaColors[patient.dosha]}`}>
+                    {patient.dosha}
+                  </Badge>
+                </div>
+                <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                  <span className="flex items-center">
+                    <Clock className="w-3 h-3 mr-1" />
+                    {patient.time}
+                  </span>
+                  <span>{patient.type}</span>
+                </div>
+              </div>
+              <Badge
+                variant={patient.status === "confirmed" ? "default" : "secondary"}
+              >
+                {patient.status}
+              </Badge>
+            </div>
+          ))}
+          <Button variant="outline" className="w-full">
+            View All Appointments
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Recent Plans */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <FileText className="w-5 h-5 mr-2 text-primary" />
+            Recent Plans
+          </CardTitle>
+          <CardDescription>Recently created diet plans</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {recentPlans.map((plan: any) => (
+            <div
+              key={plan.id}
+              className="flex items-center justify-between p-3 rounded-lg border"
+            >
+              <div className="space-y-1">
+                <p className="text-sm">{plan.patientName}</p>
+                <p className="text-xs text-muted-foreground">{plan.title}</p>
+                <p className="text-xs text-muted-foreground">{plan.createdAt}</p>
+              </div>
+              <Badge variant={plan.status === "active" ? "default" : "secondary"}>
+                {plan.status}
+              </Badge>
+            </div>
+          ))}
+          <Button variant="outline" className="w-full" onClick={() => navigate("/diet-chart")}>
+            View All Plans
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+
+    {/* Pending Tasks + Quick Actions */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Activity className="w-5 h-5 mr-2 text-primary" />
+            Pending Tasks
+          </CardTitle>
+          <CardDescription>Your pending tasks</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {pendingTasks.map((task) => (
+            <div
+              key={task.id}
+              className="flex items-center justify-between p-3 rounded-lg border"
+            >
+              <div className="space-y-1">
+                <p className="text-sm">{task.task}</p>
+                <p className="text-xs text-muted-foreground">{task.dueTime}</p>
+              </div>
+              <Badge
+                variant={
+                  task.priority === "high"
+                    ? "destructive"
+                    : task.priority === "medium"
+                    ? "default"
+                    : "secondary"
+                }
+              >
+                {task.priority}
+              </Badge>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Frequently used shortcuts</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Button variant="outline" className="w-full justify-start" onClick={() => navigate("/patients")}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add New Patient
+          </Button>
+
+          <Button variant="outline" className="w-full justify-start" onClick={() => navigate("/diet-chart")}>
+            <FileText className="w-4 h-4 mr-2" />
+            Create Diet Plan
+          </Button>
+
+          <Button variant="outline" className="w-full justify-start" onClick={() => navigate("/auto-generate")}>
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Auto Generate Diet
+          </Button>
+
+          <Button variant="outline" className="w-full justify-start" onClick={() => navigate("/food-database")}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Food Item
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+);
+
 }

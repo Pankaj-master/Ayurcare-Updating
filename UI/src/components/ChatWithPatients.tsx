@@ -361,147 +361,147 @@ export function ChatWithPatients() {
   );
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex space-x-4">
-      {/* Sidebar */}
-      <Card className="w-80 flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            {t("chat.patients")}
-            <Badge variant="outline">{patients.length}</Badge>
-          </CardTitle>
-          <div className="mt-2 flex items-center space-x-2">
-            <div className="relative w-full">
-              <Search className="w-4 h-4 absolute left-2 top-2.5 text-muted-foreground" />
-              <Input
-                className="pl-8 h-8 text-sm"
-                placeholder={t("chat.searchPatient")}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+  <div className="h-[calc(100vh-8rem)] flex space-x-4">
+    {/* Sidebar */}
+    <Card className="w-80 flex flex-col">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          Patients
+          <Badge variant="outline">{patients.length}</Badge>
+        </CardTitle>
+        <div className="mt-2 flex items-center space-x-2">
+          <div className="relative w-full">
+            <Search className="w-4 h-4 absolute left-2 top-2.5 text-muted-foreground" />
+            <Input
+              className="pl-8 h-8 text-sm"
+              placeholder="Search patients..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-1 overflow-y-auto p-2 space-y-1">
+        {filteredPatients.map((patient) => (
+          <button
+            key={patient.id}
+            onClick={() => handleSelectPatient(patient)}
+            className={`w-full flex items-center space-x-3 p-2 rounded-md text-left hover:bg-accent transition ${
+              selectedPatient?.id === patient.id ? "bg-accent" : ""
+            }`}
+          >
+            <Avatar className="w-8 h-8">
+              <AvatarImage src={patient.avatar || undefined} />
+              <AvatarFallback>{patient.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium truncate">{patient.name}</span>
+                {patient.unreadCount > 0 && (
+                  <Badge className="text-[10px] px-1.5 py-0.5 rounded-full">
+                    {patient.unreadCount}
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center justify-between mt-0.5">
+                <span className="text-[11px] text-muted-foreground truncate max-w-[120px]">
+                  {patient.lastMessage || "No messages yet"}
+                </span>
+                {patient.lastMessageTime && (
+                  <span className="text-[10px] text-muted-foreground ml-2 flex-shrink-0">
+                    {formatTime(patient.lastMessageTime)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </button>
+        ))}
+      </CardContent>
+    </Card>
+
+    {/* Main Chat */}
+    <Card className="flex-1 flex flex-col">
+      <CardHeader className="border-b flex items-center justify-between">
+        {selectedPatient ? (
+          <div className="flex items-center space-x-3">
+            <Avatar className="w-10 h-10">
+              <AvatarImage src={selectedPatient.avatar || undefined} />
+              <AvatarFallback>{selectedPatient.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div>
+              <h3 className="text-lg">{selectedPatient.name}</h3>
+              <span className="text-xs text-muted-foreground">Patient</span>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto p-2 space-y-1">
-          {filteredPatients.map((patient) => (
-            <button
-              key={patient.id}
-              onClick={() => handleSelectPatient(patient)}
-              className={`w-full flex items-center space-x-3 p-2 rounded-md text-left hover:bg-accent transition ${
-                selectedPatient?.id === patient.id ? "bg-accent" : ""
-              }`}
-            >
-              <Avatar className="w-8 h-8">
-                <AvatarImage src={patient.avatar || undefined} />
-                <AvatarFallback>{patient.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium truncate">{patient.name}</span>
-                  {patient.unreadCount > 0 && (
-                    <Badge className="text-[10px] px-1.5 py-0.5 rounded-full">
-                      {patient.unreadCount}
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center justify-between mt-0.5">
-                  <span className="text-[11px] text-muted-foreground truncate max-w-[120px]">
-                    {patient.lastMessage || "No messages yet"}
-                  </span>
-                  {patient.lastMessageTime && (
-                    <span className="text-[10px] text-muted-foreground ml-2 flex-shrink-0">
-                      {formatTime(patient.lastMessageTime)}
-                    </span>
-                  )}
+        ) : (
+          <div>
+            <h3 className="text-lg">Select a patient to start</h3>
+            <p className="text-sm text-muted-foreground">Choose a patient from the list to view messages</p>
+          </div>
+        )}
+      </CardHeader>
+
+      <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+        {!selectedPatient && (
+          <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+            Select a patient to chat
+          </div>
+        )}
+        {selectedPatient &&
+          Object.entries(messageGroups).map(([date, dayMessages]) => (
+            <div key={date}>
+              <div className="flex items-center justify-center my-4">
+                <div className="px-3 py-1 bg-muted rounded-full text-xs text-muted-foreground">
+                  {date}
                 </div>
               </div>
-            </button>
-          ))}
-        </CardContent>
-      </Card>
-
-      {/* Main Chat */}
-      <Card className="flex-1 flex flex-col">
-        <CardHeader className="border-b flex items-center justify-between">
-          {selectedPatient ? (
-            <div className="flex items-center space-x-3">
-              <Avatar className="w-10 h-10">
-                <AvatarImage src={selectedPatient.avatar || undefined} />
-                <AvatarFallback>{selectedPatient.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="text-lg">{selectedPatient.name}</h3>
-                <span className="text-xs text-muted-foreground">{t("chat.patient")}</span>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <h3 className="text-lg">{t("chat.selectPatientTitle")}</h3>
-              <p className="text-sm text-muted-foreground">{t("chat.selectPatientSubtitle")}</p>
-            </div>
-          )}
-        </CardHeader>
-
-        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-          {!selectedPatient && (
-            <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-              {t("chat.selectPatientToChat")}
-            </div>
-          )}
-          {selectedPatient &&
-            Object.entries(messageGroups).map(([date, dayMessages]) => (
-              <div key={date}>
-                <div className="flex items-center justify-center my-4">
-                  <div className="px-3 py-1 bg-muted rounded-full text-xs text-muted-foreground">
-                    {date}
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  {dayMessages.map((message) => {
-                    const isDoctorSender = doctor && message.senderId === doctor.id;
-                    return (
-                      <div
-                        key={message.id}
-                        className={`flex ${isDoctorSender ? "justify-end" : "justify-start"}`}
-                      >
-                        <div className={`max-w-xs lg:max-w-md ${isDoctorSender ? "order-2" : "order-1"}`}>
-                          <div className={`p-3 rounded-lg ${isDoctorSender ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                            <p className="text-sm">{message.message}</p>
-                            <div className={`flex items-center justify-between mt-2 text-xs ${isDoctorSender ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                              <span>{formatTime(message.createdAt)}</span>
-                              {isDoctorSender && (
-                                <div className="flex items-center space-x-1 ml-2">
-                                  {message.isRead ? <CheckCheck className="w-3 h-3 text-blue-400" /> : <Clock className="w-3 h-3" />}
-                                </div>
-                              )}
-                            </div>
+              <div className="space-y-4">
+                {dayMessages.map((message) => {
+                  const isDoctorSender = doctor && message.senderId === doctor.id;
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex ${isDoctorSender ? "justify-end" : "justify-start"}`}
+                    >
+                      <div className={`max-w-xs lg:max-w-md ${isDoctorSender ? "order-2" : "order-1"}`}>
+                        <div className={`p-3 rounded-lg ${isDoctorSender ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                          <p className="text-sm">{message.message}</p>
+                          <div className={`flex items-center justify-between mt-2 text-xs ${isDoctorSender ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                            <span>{formatTime(message.createdAt)}</span>
+                            {isDoctorSender && (
+                              <div className="flex items-center space-x-1 ml-2">
+                                {message.isRead ? <CheckCheck className="w-3 h-3 text-blue-400" /> : <Clock className="w-3 h-3" />}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          <div ref={messagesEndRef} />
-        </CardContent>
+            </div>
+          ))}
+        <div ref={messagesEndRef} />
+      </CardContent>
 
-        <div className="border-t p-4">
-          <div className="flex items-end space-x-2">
-            <Textarea
-              placeholder={selectedPatient ? t("chat.typeMessage") : t("chat.selectPatientToStart")}
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (selectedPatient) sendMessage(); }}}
-              rows={1}
-              className="resize-none"
-              disabled={!selectedPatient}
-            />
-            <Button onClick={sendMessage} disabled={!selectedPatient || !newMessage.trim()} className="bg-primary hover:bg-primary/90">
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
+      <div className="border-t p-4">
+        <div className="flex items-end space-x-2">
+          <Textarea
+            placeholder={selectedPatient ? "Type a message..." : "Select a patient to start chatting"}
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (selectedPatient) sendMessage(); }}}
+            rows={1}
+            className="resize-none"
+            disabled={!selectedPatient}
+          />
+          <Button onClick={sendMessage} disabled={!selectedPatient || !newMessage.trim()} className="bg-primary hover:bg-primary/90">
+            <Send className="w-4 h-4" />
+          </Button>
         </div>
-      </Card>
-    </div>
-  );
+      </div>
+    </Card>
+  </div>
+);
 }

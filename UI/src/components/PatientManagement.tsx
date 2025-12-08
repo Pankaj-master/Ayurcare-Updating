@@ -353,43 +353,41 @@ return (
     {/* Header */}
     <div className="flex justify-between items-center">
       <div>
-        <h1 className="text-3xl text-foreground">{t("patients.title")}</h1>
-        <p className="text-muted-foreground">
-          {t("patients.subtitle")}
-        </p>
+        <h1 className="text-3xl text-foreground">Patients</h1>
+        <p className="text-muted-foreground">Manage patient records and appointments</p>
       </div>
 
       <Dialog open={isAddPatientOpen} onOpenChange={setIsAddPatientOpen}>
         <DialogTrigger asChild>
           <Button className="bg-primary hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-2" />
-            {t("patients.addPatient")}
+            Add Patient
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{t("patients.addNewPatient")}</DialogTitle>
+            <DialogTitle>Add New Patient</DialogTitle>
             <DialogDescription>
-              {t("patients.addNewPatientDesc")}
+              Fill in patient details to add them to your clinic
             </DialogDescription>
           </DialogHeader>
 
           {/* ADD PATIENT FORM */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">{t("patients.fullName")} *</Label>
+              <Label htmlFor="name">Full Name *</Label>
               <Input
                 id="name"
                 value={newPatient.name}
                 onChange={(e) =>
                   setNewPatient({ ...newPatient, name: e.target.value })
                 }
-                placeholder={t("patients.fullNamePlaceholder")}
+                placeholder="Enter full name"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="age">{t("patients.age")} *</Label>
+              <Label htmlFor="age">Age *</Label>
               <Input
                 id="age"
                 type="number"
@@ -397,12 +395,12 @@ return (
                 onChange={(e) =>
                   setNewPatient({ ...newPatient, age: e.target.value })
                 }
-                placeholder={t("patients.agePlaceholder")}
+                placeholder="Enter age"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="gender">{t("patients.gender")} *</Label>
+              <Label htmlFor="gender">Gender *</Label>
               <Select
                 value={newPatient.gender}
                 onValueChange={(value) =>
@@ -410,30 +408,30 @@ return (
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t("patients.selectGender")} />
+                  <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="male">{t("patients.male")}</SelectItem>
-                  <SelectItem value="female">{t("patients.female")}</SelectItem>
-                  <SelectItem value="other">{t("patients.other")}</SelectItem>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">{t("patients.phone")}</Label>
+              <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
                 value={newPatient.phone}
                 onChange={(e) =>
                   setNewPatient({ ...newPatient, phone: e.target.value })
                 }
-                placeholder={t("patients.phonePlaceholder")}
+                placeholder="Enter phone number"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">{t("patients.email")}</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -441,12 +439,12 @@ return (
                 onChange={(e) =>
                   setNewPatient({ ...newPatient, email: e.target.value })
                 }
-                placeholder={t("patients.emailPlaceholder")}
+                placeholder="Enter email (optional)"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="weight">{t("patients.weight")}</Label>
+              <Label htmlFor="weight">Weight (kg)</Label>
               <Input
                 id="weight"
                 type="number"
@@ -454,12 +452,12 @@ return (
                 onChange={(e) =>
                   setNewPatient({ ...newPatient, weight: e.target.value })
                 }
-                placeholder={t("patients.weightPlaceholder")}
+                placeholder="Enter weight"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="height">{t("patients.height")}</Label>
+              <Label htmlFor="height">Height (cm)</Label>
               <Input
                 id="height"
                 type="number"
@@ -467,12 +465,12 @@ return (
                 onChange={(e) =>
                   setNewPatient({ ...newPatient, height: e.target.value })
                 }
-                placeholder={t("patients.heightPlaceholder")}
+                placeholder="Enter height"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="dosha">{t("patients.doshaType")}</Label>
+              <Label htmlFor="dosha">Dosha Type</Label>
               <Select
                 value={newPatient.dosha}
                 onValueChange={(value) =>
@@ -480,7 +478,7 @@ return (
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t("patients.selectDosha")} />
+                  <SelectValue placeholder="Select dosha" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Vata">Vata</SelectItem>
@@ -494,20 +492,20 @@ return (
             </div>
 
             <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="address">{t("patients.address")}</Label>
+              <Label htmlFor="address">Address</Label>
               <Textarea
                 id="address"
                 value={newPatient.address}
                 onChange={(e) =>
                   setNewPatient({ ...newPatient, address: e.target.value })
                 }
-                placeholder={t("patients.addressPlaceholder")}
+                placeholder="Enter address"
                 rows={2}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sleep">{t("patients.sleepPattern")}</Label>
+              <Label htmlFor="sleep">Sleep Pattern</Label>
               <Input
                 id="sleep"
                 value={newPatient.lifestyle.sleep}
@@ -520,12 +518,12 @@ return (
                     },
                   })
                 }
-                placeholder={t("patients.sleepPlaceholder")}
+                placeholder="e.g., 10:00 PM - 6:00 AM"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bowel">{t("patients.bowelMovement")}</Label>
+              <Label htmlFor="bowel">Bowel Movement</Label>
               <Input
                 id="bowel"
                 value={newPatient.lifestyle.bowel}
@@ -538,20 +536,20 @@ return (
                     },
                   })
                 }
-                placeholder={t("patients.bowelPlaceholder")}
+                placeholder="e.g., once daily"
               />
             </div>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button variant="outline" onClick={() => setIsAddPatientOpen(false)}>
-              {t("common.cancel")}
+              Cancel
             </Button>
             <Button
               onClick={handleAddPatient}
               className="bg-primary hover:bg-primary/90"
             >
-              {t("common.save")}
+              Save
             </Button>
           </div>
         </DialogContent>
@@ -562,15 +560,15 @@ return (
         <Dialog open={!!editingPatient} onOpenChange={() => setEditingPatient(null)}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>{t("patients.editPatient")}</DialogTitle>
+              <DialogTitle>Edit Patient</DialogTitle>
               <DialogDescription>
-                {t("patients.editPatientDesc")}
+                Update patient details below
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
               <div>
-                <Label>{t("patients.height")}</Label>
+                <Label>Height (cm)</Label>
                 <Input
                   type="number"
                   value={editForm.height ?? ""}
@@ -581,7 +579,7 @@ return (
               </div>
 
               <div>
-                <Label>{t("patients.weight")}</Label>
+                <Label>Weight (kg)</Label>
                 <Input
                   type="number"
                   value={editForm.weight ?? ""}
@@ -592,7 +590,7 @@ return (
               </div>
 
               <div>
-                <Label>{t("patients.doshaType")}</Label>
+                <Label>Dosha Type</Label>
                 <Select
                   value={editForm.dosha ?? ""}
                   onValueChange={(value) =>
@@ -600,7 +598,7 @@ return (
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t("patients.selectDosha")} />
+                    <SelectValue placeholder="Select dosha" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="VATA">Vata</SelectItem>
@@ -612,7 +610,7 @@ return (
               </div>
 
               <div>
-                <Label>{t("patients.sleepPattern")}</Label>
+                <Label>Sleep Pattern</Label>
                 <Input
                   value={editForm.sleepPattern ?? ""}
                   onChange={(e) =>
@@ -622,7 +620,7 @@ return (
               </div>
 
               <div>
-                <Label>{t("patients.bowelMovement")}</Label>
+                <Label>Bowel Movement</Label>
                 <Input
                   value={editForm.bowelMovement ?? ""}
                   onChange={(e) =>
@@ -634,9 +632,9 @@ return (
 
             <div className="flex justify-end gap-2 mt-6">
               <Button variant="outline" onClick={() => setEditingPatient(null)}>
-                {t("common.cancel")}
+                Cancel
               </Button>
-              <Button onClick={handleEditSave}>{t("common.save")}</Button>
+              <Button onClick={handleEditSave}>Save</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -650,7 +648,7 @@ return (
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder={t("patients.searchPlaceholder")}
+              placeholder="Search patients, foods, plans..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -661,10 +659,10 @@ return (
             <Filter className="w-4 h-4 text-muted-foreground" />
             <Select value={filterDosha} onValueChange={setFilterDosha}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder={t("patients.filterDosha")} />
+                <SelectValue placeholder="Filter by dosha" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t("patients.allDoshas")}</SelectItem>
+                <SelectItem value="all">All Doshas</SelectItem>
                 <SelectItem value="Vata">Vata</SelectItem>
                 <SelectItem value="Pitta">Pitta</SelectItem>
                 <SelectItem value="Kapha">Kapha</SelectItem>
@@ -682,10 +680,10 @@ return (
     <Card>
       <CardHeader>
         <CardTitle>
-          {t("patients.patientList")} ({filteredPatients.length})
+          Patient List ({filteredPatients.length})
         </CardTitle>
         <CardDescription>
-          {t("patients.patientListDesc")}
+          All registered patients in your clinic
         </CardDescription>
       </CardHeader>
 
@@ -693,14 +691,14 @@ return (
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t("patients.thName")}</TableHead>
-              <TableHead>{t("patients.thAge")}</TableHead>
-              <TableHead>{t("patients.thGender")}</TableHead>
-              <TableHead>{t("patients.thDosha")}</TableHead>
-              <TableHead>{t("patients.thBMI")}</TableHead>
-              <TableHead>{t("patients.thLastVisit")}</TableHead>
-              <TableHead>{t("patients.thContact")}</TableHead>
-              <TableHead>{t("patients.thActions")}</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Age</TableHead>
+              <TableHead>Gender</TableHead>
+              <TableHead>Dosha</TableHead>
+              <TableHead>BMI</TableHead>
+              <TableHead>Last Visit</TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -796,5 +794,6 @@ return (
     </Card>
   </div>
 );
+
 
 }

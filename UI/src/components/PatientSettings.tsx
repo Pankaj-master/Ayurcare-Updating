@@ -51,13 +51,10 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../contexts/AuthContext";
-import { useTranslation } from "react-i18next";
-
 import { authAPI } from "../services/api";
 
 export function PatientSettings({ patient }) {
-  const { user } = useAuth(); // dynamic user data
-  const { t } = useTranslation();
+  const { user } = useAuth();
 
   const [profileData, setProfileData] = useState({
     name: user?.name || "",
@@ -86,7 +83,6 @@ export function PatientSettings({ patient }) {
   });
 
   const handleSaveProfile = () => {
-    // TODO: update patient profile API
     console.log("Saving:", profileData);
     alert("Profile updated!");
   };
@@ -118,31 +114,24 @@ export function PatientSettings({ patient }) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <h1 className="text-3xl">{t("patientSettings.title")}</h1>
-      <p className="text-muted-foreground">{t("patientSettings.subtitle")}</p>
+      <h1 className="text-3xl">Patient Settings</h1>
+      <p className="text-muted-foreground">Manage patient information</p>
 
       <Tabs defaultValue="profile" className="w-full">
-        {/* Updated to grid-cols-2 to fit both tabs */}
         <TabsList className="grid grid-cols-2 w-full">
-          <TabsTrigger value="profile">
-            {t("patientSettings.tabs.profile")}
-          </TabsTrigger>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
 
-        {/* ------------------ PROFILE TAB ------------------ */}
+        {/* PROFILE TAB */}
         <TabsContent value="profile">
           <Card>
             <CardHeader>
-              <CardTitle>{t("patientSettings.profile.heading")}</CardTitle>
-              <CardDescription>
-                {t("patientSettings.profile.description")}
-              </CardDescription>
+              <CardTitle>Profile Information</CardTitle>
+              <CardDescription>Edit patient details</CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {/* Avatar */}
               <div className="flex items-center space-x-4">
                 <Avatar className="w-20 h-20">
                   <AvatarImage src={user?.avatar} />
@@ -152,9 +141,8 @@ export function PatientSettings({ patient }) {
                 </Avatar>
               </div>
 
-              {/* Name */}
               <div>
-                <Label>{t("patientSettings.fields.name")}</Label>
+                <Label>Name</Label>
                 <Input
                   value={profileData.name}
                   onChange={(e) =>
@@ -163,15 +151,13 @@ export function PatientSettings({ patient }) {
                 />
               </div>
 
-              {/* Email */}
               <div>
-                <Label>{t("patientSettings.fields.email")}</Label>
+                <Label>Email</Label>
                 <Input value={profileData.email} disabled />
               </div>
 
-              {/* Phone */}
               <div>
-                <Label>{t("patientSettings.fields.phone")}</Label>
+                <Label>Phone</Label>
                 <Input
                   value={profileData.phone}
                   onChange={(e) =>
@@ -180,9 +166,8 @@ export function PatientSettings({ patient }) {
                 />
               </div>
 
-              {/* Age */}
               <div>
-                <Label>{t("patientSettings.fields.age")}</Label>
+                <Label>Age</Label>
                 <Input
                   type="number"
                   value={profileData.age}
@@ -192,9 +177,8 @@ export function PatientSettings({ patient }) {
                 />
               </div>
 
-              {/* Gender */}
               <div>
-                <Label>{t("patientSettings.fields.gender")}</Label>
+                <Label>Gender</Label>
                 <Input
                   value={profileData.gender}
                   onChange={(e) =>
@@ -203,15 +187,13 @@ export function PatientSettings({ patient }) {
                 />
               </div>
 
-              {/* Dosha */}
               <div>
-                <Label>{t("patientSettings.fields.doshaType")}</Label>
+                <Label>Dosha Type</Label>
                 <Input value={profileData.doshaType} disabled />
               </div>
 
-              {/* Address */}
               <div>
-                <Label>{t("patientSettings.fields.address")}</Label>
+                <Label>Address</Label>
                 <Textarea
                   value={profileData.address}
                   onChange={(e) =>
@@ -220,9 +202,8 @@ export function PatientSettings({ patient }) {
                 />
               </div>
 
-              {/* Height */}
               <div>
-                <Label>{t("patientSettings.fields.height")}</Label>
+                <Label>Height</Label>
                 <Input
                   type="number"
                   value={profileData.height}
@@ -232,9 +213,8 @@ export function PatientSettings({ patient }) {
                 />
               </div>
 
-              {/* Weight */}
               <div>
-                <Label>{t("patientSettings.fields.weight")}</Label>
+                <Label>Weight</Label>
                 <Input
                   type="number"
                   value={profileData.weight}
@@ -244,9 +224,8 @@ export function PatientSettings({ patient }) {
                 />
               </div>
 
-              {/* Sleep Pattern */}
               <div>
-                <Label>{t("patientSettings.fields.sleepPattern")}</Label>
+                <Label>Sleep Pattern</Label>
                 <Input
                   value={profileData.sleepPattern}
                   onChange={(e) =>
@@ -258,9 +237,8 @@ export function PatientSettings({ patient }) {
                 />
               </div>
 
-              {/* Bowel Movement */}
               <div>
-                <Label>{t("patientSettings.fields.bowelMovement")}</Label>
+                <Label>Bowel Movement</Label>
                 <Input
                   value={profileData.bowelMovement}
                   onChange={(e) =>
@@ -272,25 +250,22 @@ export function PatientSettings({ patient }) {
                 />
               </div>
 
-              {/* Patient Code */}
               <div>
-                <Label>{t("patientSettings.fields.patientCode")}</Label>
+                <Label>Patient Code</Label>
                 <Input value={profileData.patientCode} disabled />
               </div>
 
-              {/* Created At */}
               <div>
-                <Label>{t("patientSettings.fields.createdAt")}</Label>
+                <Label>Created At</Label>
                 <Input value={profileData.createdAt} disabled />
               </div>
 
-              <Button onClick={handleSaveProfile}>
-                {t("patientSettings.actions.saveChanges")}
-              </Button>
+              <Button onClick={handleSaveProfile}>Save Changes</Button>
             </CardContent>
           </Card>
         </TabsContent>
-        {/* Security Tab */}
+
+        {/* SECURITY TAB */}
         <TabsContent value="security" className="space-y-6">
           <Card>
             <CardHeader>
@@ -302,15 +277,15 @@ export function PatientSettings({ patient }) {
                 Manage your account security and privacy
               </CardDescription>
             </CardHeader>
+
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <h3 className="text-lg">Change Password</h3>
 
                 <div className="space-y-2">
-                  <Label htmlFor="current-password">Current Password</Label>
+                  <Label>Current Password</Label>
                   <div className="relative">
                     <Input
-                      id="current-password"
                       type={showPassword ? "text" : "password"}
                       value={security.currentPassword}
                       onChange={(e) =>
@@ -338,9 +313,8 @@ export function PatientSettings({ patient }) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="new-password">New Password</Label>
+                    <Label>New Password</Label>
                     <Input
-                      id="new-password"
                       type="password"
                       value={security.newPassword}
                       onChange={(e) =>
@@ -353,11 +327,8 @@ export function PatientSettings({ patient }) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password">
-                      Confirm New Password
-                    </Label>
+                    <Label>Confirm New Password</Label>
                     <Input
-                      id="confirm-password"
                       type="password"
                       value={security.confirmPassword}
                       onChange={(e) =>
@@ -382,15 +353,12 @@ export function PatientSettings({ patient }) {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="two-factor">
-                      Two-Factor Authentication
-                    </Label>
+                    <Label>Two-Factor Authentication</Label>
                     <p className="text-sm text-muted-foreground">
                       Add an extra layer of security to your account
                     </p>
                   </div>
                   <Switch
-                    id="two-factor"
                     checked={security.twoFactorAuth}
                     onCheckedChange={(checked) =>
                       setSecurity({ ...security, twoFactorAuth: checked })
@@ -399,9 +367,7 @@ export function PatientSettings({ patient }) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="session-timeout">
-                    Session Timeout (minutes)
-                  </Label>
+                  <Label>Session Timeout (minutes)</Label>
                   <Select
                     value={security.sessionTimeout}
                     onValueChange={(value) =>

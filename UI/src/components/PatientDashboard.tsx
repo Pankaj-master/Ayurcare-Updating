@@ -164,12 +164,12 @@ return (
     {/* Header */}
     <div className="flex justify-between items-center">
       <div>
-        <h1 className="text-3xl text-foreground">{t("dietPage.title")}</h1>
-        <p className="text-muted-foreground">{t("dietPage.subtitle")}</p>
+        <h1 className="text-3xl text-foreground">Diet Overview</h1>
+        <p className="text-muted-foreground">Track today’s meals, progress and reminders</p>
       </div>
 
       <Button onClick={() => navigate('/diet-history')} variant="outline">
-        {t("dietPage.viewHistory")}
+        View History
       </Button>
     </div>
 
@@ -182,7 +182,7 @@ return (
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">{t(stat.title)}</p>
+                  <p className="text-sm text-muted-foreground">{stat.title}</p>
                   <p className="text-2xl">
                     {stat.value}
                     {stat.unit && <span className="text-sm text-muted-foreground ml-1">{stat.unit}</span>}
@@ -197,7 +197,7 @@ return (
 
               <Progress value={stat.percentage} className="h-2" />
               <p className="text-xs text-muted-foreground mt-2">
-                {stat.percentage}% {t("dietPage.ofDailyGoal")}
+                {stat.percentage}% of daily goal
               </p>
             </CardContent>
           </Card>
@@ -217,7 +217,7 @@ return (
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Icon className="w-5 h-5 mr-2 text-primary" />
-                  {t(`dietPage.meals.${mealType}`)}
+                  {mealType}
                 </div>
 
                 <Badge variant={completedMeals === meals.length ? "default" : "secondary"}>
@@ -227,8 +227,8 @@ return (
 
               <CardDescription>
                 {completedMeals === meals.length
-                  ? t("dietPage.completed")
-                  : `${meals.length - completedMeals} ${t("dietPage.itemsRemaining")}`}
+                  ? "Completed"
+                  : `${meals.length - completedMeals} items remaining`}
               </CardDescription>
             </CardHeader>
 
@@ -242,7 +242,7 @@ return (
                       </p>
 
                       <Badge variant="outline" className="text-xs">
-                        {meal.calories} {t("dietPage.cal")}
+                        {meal.calories} cal
                       </Badge>
                     </div>
 
@@ -256,13 +256,13 @@ return (
 
                   {meal.status === "pending" && (
                     <Button size="sm" variant="outline" onClick={() => markMealComplete(meal.id)}>
-                      {t("dietPage.markDone")}
+                      Mark Done
                     </Button>
                   )}
 
                   {meal.status === "completed" && (
                     <Badge variant="default" className="bg-green-100 text-green-800">
-                      ✓ {t("dietPage.done")}
+                      ✓ Done
                     </Badge>
                   )}
                 </div>
@@ -281,9 +281,9 @@ return (
         <CardHeader>
           <CardTitle className="flex items-center">
             <Clock className="w-5 h-5 mr-2 text-primary" />
-            {t("dietPage.upcomingReminders")}
+            Upcoming Reminders
           </CardTitle>
-          <CardDescription>{t("dietPage.reminderSubtitle")}</CardDescription>
+          <CardDescription>Your next scheduled diet and health reminders</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -309,13 +309,13 @@ return (
                     : "secondary"
                 }
               >
-                {t(`dietPage.priority.${reminder.priority}`)}
+                {reminder.priority}
               </Badge>
             </div>
           ))}
 
           <Button variant="outline" className="w-full" onClick={() => navigate('/reminders')}>
-            {t("dietPage.viewAllReminders")}
+            View All Reminders
           </Button>
         </CardContent>
       </Card>
@@ -323,29 +323,29 @@ return (
       {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("dietPage.quickActions")}</CardTitle>
-          <CardDescription>{t("dietPage.quickActionsSubtitle")}</CardDescription>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Shortcuts to important tools</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-3">
           <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/chat')}>
             <TrendingUp className="w-4 h-4 mr-2" />
-            {t("dietPage.chatDoctor")}
+            Chat with Doctor
           </Button>
 
           <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/diet-history')}>
             <Calendar className="w-4 h-4 mr-2" />
-            {t("dietPage.viewHistory")}
+            View Diet History
           </Button>
 
           <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/reports')}>
             <TrendingUp className="w-4 h-4 mr-2" />
-            {t("dietPage.progressReports")}
+            Progress Reports
           </Button>
 
           <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/reminders')}>
             <Clock className="w-4 h-4 mr-2" />
-            {t("dietPage.manageReminders")}
+            Manage Reminders
           </Button>
         </CardContent>
       </Card>
@@ -353,5 +353,4 @@ return (
     </div>
   </div>
 );
-
 }

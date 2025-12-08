@@ -128,46 +128,44 @@ export function FoodDatabase() {
     }
   };
 
-return (
-  <div className="space-y-6">
-
-    {/* Header */}
-    <div className="flex justify-between items-center">
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
       <div>
-        <h1 className="text-3xl text-foreground">{t("food.title")}</h1>
-        <p className="text-muted-foreground">{t("food.subtitle")}</p>
+        <h1 className="text-3xl text-foreground">Foods</h1>
+        <p className="text-muted-foreground">Manage your food items and nutrients</p>
       </div>
 
       <Dialog open={isAddFoodOpen} onOpenChange={setIsAddFoodOpen}>
         <DialogTrigger asChild>
           <Button className="bg-primary hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-2" />
-            {t("food.addFoodButton")}
+            Add Food
           </Button>
         </DialogTrigger>
 
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{t("food.addNewFood")}</DialogTitle>
+            <DialogTitle>Add New Food</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
-
             {/* Food Name */}
             <div className="space-y-2">
-              <Label>{t("food.foodName")}</Label>
+              <Label>Food Name</Label>
               <Input
                 value={newFood.name}
                 onChange={(e) =>
                   setNewFood({ ...newFood, name: e.target.value })
                 }
-                placeholder={t("food.foodNamePlaceholder")}
+                placeholder="Enter food name"
               />
             </div>
 
             {/* Category */}
             <div className="space-y-2">
-              <Label>{t("food.category")}</Label>
+              <Label>Category</Label>
               <Select
                 value={newFood.category}
                 onValueChange={(value) =>
@@ -175,7 +173,7 @@ return (
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t("food.selectCategory")} />
+                  <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
@@ -190,7 +188,7 @@ return (
             {/* Nutrients */}
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-2">
-                <Label>{t("food.calories")}</Label>
+                <Label>Calories</Label>
                 <Input
                   type="number"
                   value={newFood.calories}
@@ -201,7 +199,7 @@ return (
               </div>
 
               <div className="space-y-2">
-                <Label>{t("food.protein")}</Label>
+                <Label>Protein (g)</Label>
                 <Input
                   type="number"
                   value={newFood.protein}
@@ -214,7 +212,7 @@ return (
 
             <div className="grid grid-cols-3 gap-2">
               <div className="space-y-2">
-                <Label>{t("food.carbs")}</Label>
+                <Label>Carbs (g)</Label>
                 <Input
                   type="number"
                   value={newFood.carbs}
@@ -225,7 +223,7 @@ return (
               </div>
 
               <div className="space-y-2">
-                <Label>{t("food.fat")}</Label>
+                <Label>Fat (g)</Label>
                 <Input
                   type="number"
                   value={newFood.fat}
@@ -236,7 +234,7 @@ return (
               </div>
 
               <div className="space-y-2">
-                <Label>{t("food.fiber")}</Label>
+                <Label>Fiber (g)</Label>
                 <Input
                   type="number"
                   value={newFood.fiber}
@@ -249,24 +247,24 @@ return (
 
             {/* Description */}
             <div className="space-y-2">
-              <Label>{t("food.description")}</Label>
+              <Label>Description</Label>
               <Textarea
                 rows={3}
                 value={newFood.description}
                 onChange={(e) =>
                   setNewFood({ ...newFood, description: e.target.value })
                 }
-                placeholder={t("food.descriptionPlaceholder")}
+                placeholder="Optional description"
               />
             </div>
 
             {/* Footer */}
             <div className="flex justify-end space-x-2 pt-4">
               <Button variant="outline" onClick={() => setIsAddFoodOpen(false)}>
-                {t("common.cancel")}
+                Cancel
               </Button>
               <Button className="bg-primary hover:bg-primary/90" onClick={handleAddFood}>
-                {t("food.addFoodButton")}
+                Add Food
               </Button>
             </div>
           </div>
@@ -279,17 +277,17 @@ return (
       <CardContent className="p-6">
         <div className="flex flex-col md:flex-row gap-4">
           <Input
-            placeholder={t("food.search")}
+            placeholder="Search foods..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
 
           <Select value={filterCategory} onValueChange={setFilterCategory}>
             <SelectTrigger className="w-48">
-              <SelectValue placeholder={t("food.filterCategory")} />
+              <SelectValue placeholder="Filter category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t("food.all")}</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat} value={cat}>
                   {cat}
@@ -313,16 +311,28 @@ return (
 
             <div className="text-right">
               <p className="text-xl font-bold text-primary">{food.calories}</p>
-              <p className="text-xs text-muted-foreground">{t("food.kcal")}</p>
+              <p className="text-xs text-muted-foreground">kcal</p>
             </div>
           </CardHeader>
 
           <CardContent className="space-y-3">
             <div className="grid grid-cols-4 text-center gap-1">
-              <div><p className="text-xs">{t("food.protein")}</p><p className="text-sm">{food.protein}g</p></div>
-              <div><p className="text-xs">{t("food.carbs")}</p><p className="text-sm">{food.carbs}g</p></div>
-              <div><p className="text-xs">{t("food.fat")}</p><p className="text-sm">{food.fat}g</p></div>
-              <div><p className="text-xs">{t("food.fiber")}</p><p className="text-sm">{food.fiber}g</p></div>
+              <div>
+                <p className="text-xs">Protein</p>
+                <p className="text-sm">{food.protein}g</p>
+              </div>
+              <div>
+                <p className="text-xs">Carbs</p>
+                <p className="text-sm">{food.carbs}g</p>
+              </div>
+              <div>
+                <p className="text-xs">Fat</p>
+                <p className="text-sm">{food.fat}g</p>
+              </div>
+              <div>
+                <p className="text-xs">Fiber</p>
+                <p className="text-sm">{food.fiber}g</p>
+              </div>
             </div>
 
             {food.description && (
@@ -336,12 +346,10 @@ return (
     {filteredFoods.length === 0 && (
       <Card>
         <CardContent className="text-center py-12">
-          <p className="text-muted-foreground">{t("food.noFoods")}</p>
+          <p className="text-muted-foreground">No foods found</p>
         </CardContent>
       </Card>
     )}
   </div>
-);
-
-
+  );
 }
