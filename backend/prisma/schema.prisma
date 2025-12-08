@@ -1,0 +1,280 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  DOCTOR
+  PATIENT
+}
+
+enum DoshaType {
+  VATA
+  PITTA
+  KAPHA
+  TRIDOSHA
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+enum FoodCategory {
+  GRAINS
+  VEGETABLES
+  FRUITS
+  DAIRY
+  SPICES
+  HERBS
+  NUTS
+  LEGUMES
+  MEAT
+  FISH
+  OTHER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      UserRole
+  avatar    String?
+  phone     String?
+  address   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Doctor specific fields
+  specialization String?
+  licenseNumber  String?
+  experience     Int?
+
+  // Patient specific fields
+  age            Int?
+  gender         String?
+  doshaType      DoshaType?
+  medicalHistory String?
+  allergies      String?
+  medications    String?
+
+  // Relations
+  doctorPatients     Patient[]      @relation("DoctorPatients")       // doctor → patients
+  patientProfile     Patient?       @relation("UserPatientProfile")   // user → patient profile
+  createdDietPlans    DietPlan[]    @relation("CreatedDietPlans")
+  patientDietPlans    DietPlan[]    @relation("PatientDietPlans")
+  sentMessages        ChatMessage[] @relation("SentMessages")
+  receivedMessages    ChatMessage[] @relation("ReceivedMessages")
+  healthRecords       HealthRecord[] @relation("PatientHealthRecords")
+  reminders           Reminder[]    @relation("UserReminders")
+  collections         Collection[]  @relation("DoctorCollections")
+
+  @@map("users")
+}
+
+model Patient {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  doctorId    String
+  patientCode String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // New patient-specific fields
+  height         Float?
+  weight         Float?
+  sleepPattern   String?
+  bowelMovement  String?
+
+  // Relations
+  user         User   @relation("UserPatientProfile", fields: [userId], references: [id], onDelete: Cascade)
+  doctor       User   @relation("DoctorPatients", fields: [doctorId], references: [id])
+  chatMessages ChatMessage[] @relation("PatientChatMessages")
+
+  @@map("patients")
+}
+
+
+model Food {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  category    FoodCategory
+  calories    Float?
+  protein     Float?
+  carbs       Float?
+  fat         Float?
+  fiber       Float?
+  vitamins    String? // JSON string for vitamins
+  minerals    String? // JSON string for minerals
+  doshaEffects String? // JSON string for dosha effects
+  benefits    String? // JSON string for health benefits
+  precautions String? // JSON string for precautions
+  imageUrl    String?
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  dietPlanItems DietPlanItem[]
+  recipeItems   RecipeItem[]
+
+  @@map("foods")
+}
+
+model Recipe {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  instructions String
+  prepTime    Int? // in minutes
+  cookTime    Int? // in minutes
+  servings    Int?
+  difficulty  String?
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  items RecipeItem[]
+  dietPlanItems DietPlanItem[]
+
+  @@map("recipes")
+}
+
+model RecipeItem {
+  id       String @id @default(cuid())
+  recipeId String
+  foodId   String
+  quantity Float
+  unit     String
+
+  // Relations
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  food   Food   @relation(fields: [foodId], references: [id])
+
+  @@map("recipe_items")
+}
+
+model DietPlan {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  doctorId    String
+  patientId   String?
+  doshaType   DoshaType?
+  duration    Int? // in days
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  doctor  User         @relation("CreatedDietPlans", fields: [doctorId], references: [id])
+  patient User?        @relation("PatientDietPlans", fields: [patientId], references: [id])
+  items   DietPlanItem[]
+
+  @@map("diet_plans")
+}
+
+model DietPlanItem {
+  id         String   @id @default(cuid())
+  dietPlanId String
+  foodId     String?
+  recipeId   String?
+  mealType   MealType
+  quantity   Float?
+  unit       String?
+  notes      String?
+  dayOfWeek  Int? // 1-7 for Monday-Sunday
+  time       String? // HH:MM format
+
+  // Relations
+  dietPlan DietPlan @relation(fields: [dietPlanId], references: [id], onDelete: Cascade)
+  food     Food?    @relation(fields: [foodId], references: [id])
+  recipe   Recipe?  @relation(fields: [recipeId], references: [id])
+
+  @@map("diet_plan_items")
+}
+
+model HealthRecord {
+  id        String   @id @default(cuid())
+  patientId String
+  date      DateTime
+  weight    Float?
+  height    Float?
+  bloodPressure String?
+  heartRate Int?
+  temperature Float?
+  symptoms  String?
+  diagnosis String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  patient User @relation("PatientHealthRecords", fields: [patientId], references: [id])
+
+  @@map("health_records")
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  senderId  String
+  receiverId String?
+  patientId String?
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  sender   User    @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User?   @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  patient  Patient? @relation("PatientChatMessages", fields: [patientId], references: [id])
+
+  @@map("chat_messages")
+}
+
+model Reminder {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  date      DateTime
+  time      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation("UserReminders", fields: [userId], references: [id])
+
+  @@map("reminders")
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  doctorId    String
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  doctor User @relation("DoctorCollections", fields: [doctorId], references: [id])
+
+  @@map("collections")
+}
+

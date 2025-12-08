@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ayurvedic Diet Management App</title>
+
+    <style>
+      /* hide Google visible UI while keeping widget initialized */
+      #google_translate_element {
+        visibility: hidden !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        pointer-events: none !important;
+      }
+
+      /* hide known toolbar/banner/logo/combo elements */
+      iframe.goog-te-banner-frame,
+      .goog-te-banner-frame,
+      .goog-logo-link,
+      a[href*="translate.google.com"],
+      .goog-te-gadget-icon,
+      .goog-te-combo,
+      .goog-te-banner,
+      #goog-gt-tt,
+      .goog-te-balloon-frame,
+      .goog-te-menu-frame,
+      .powered-by-google {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+
+      html, body {
+        margin-top: 0 !important;
+        top: 0 !important;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="google_translate_element"></div>
+
+    <div id="root"></div>
+
+    <script>
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement(
+          {
+            pageLanguage: "en",
+            includedLanguages: "en,hi,gu,mr,bn,ta,te,kn,ml,pa,ur,or,as",
+            autoDisplay: false
+          },
+          "google_translate_element"
+        );
+      }
+
+      function setGoogleTranslateCookie(lang) {
+        var domain = location.hostname;
+        try {
+          document.cookie = "googtrans=/en/" + lang + ";domain=" + domain + ";path=/";
+          document.cookie = "googtrans=/en/" + lang + ";domain=." + domain + ";path=/";
+        } catch (e) {
+          document.cookie = "googtrans=/en/" + lang + ";path=/";
+        }
+        location.reload();
+      }
+
+      /* aggressively remove any injected google toolbar/banner elements */
+      function removeGoogleToolbarLoop(durationMs = 10000, pollInterval = 150) {
+        const stopAt = Date.now() + durationMs;
+        const interval = setInterval(() => {
+          try {
+            // remove iframe banner(s)
+            document.querySelectorAll('iframe').forEach(iframe => {
+              try {
+                const src = iframe.getAttribute('src') || '';
+                if (/translate.google|goog.*banner|goog.*translate/.test(src) || (iframe.className && iframe.className.indexOf('goog-te') !== -1)) {
+                  iframe.remove();
+                }
+              } catch (e){}
+            });
+
+            // hide banner nodes and parents that contain translation UI text
+            document.querySelectorAll('div,span,body,html').forEach(el => {
+              try {
+                const txt = (el.innerText || '').trim();
+                if (!txt) return;
+                if (/Translated to:|Translated to|Show original|Powered by Google|Translated to:/i.test(txt)) {
+                  el.style.display = 'none';
+                }
+              } catch (e){}
+            });
+
+            // hide known selectors again (in case they reappear)
+            const selectors = [
+              '.goog-te-banner-frame', '.goog-te-banner-frame.skiptranslate',
+              '.goog-te-banner', '#goog-gt-tt', '.goog-logo-link', '.goog-te-gadget',
+              '.goog-te-combo', '.goog-te-menu-frame', '.goog-te-balloon-frame'
+            ];
+            selectors.forEach(sel => {
+              document.querySelectorAll(sel).forEach(n => {
+                try { n.style.display = 'none'; n.style.visibility = 'hidden'; n.remove && n.remove(); } catch(e){}
+              });
+            });
+
+            // reset page top offset
+            document.documentElement.style.top = '0px';
+            document.body.style.top = '0px';
+            document.documentElement.style.marginTop = '0px';
+            document.body.style.marginTop = '0px';
+          } catch (e){}
+
+          if (Date.now() > stopAt) clearInterval(interval);
+        }, pollInterval);
+      }
+
+      window.addEventListener('load', () => {
+        // run multiple times: early + shortly after translate script loads
+        removeGoogleToolbarLoop(10000, 150);
+        setTimeout(removeGoogleToolbarLoop, 1200, 10000, 150);
+        setTimeout(removeGoogleToolbarLoop, 3000, 10000, 150);
+      });
+    </script>
+
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
