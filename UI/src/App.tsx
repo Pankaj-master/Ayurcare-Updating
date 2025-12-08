@@ -28,6 +28,8 @@ import { ChatWithDoctor } from './components/ChatWithDoctor';
 import { Reminders } from './components/Reminders';
 
 import { PatientSettings } from './components/PatientSettings';
+import { AdminDashboard } from './components/AdminDashboard';
+import {DoctorVerificationPage} from './components/DoctorVerificationPage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -101,6 +103,14 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route 
+              path="/admin/dashboard"
+              element={<AdminDashboard />}
+            />  
+            <Route
+              path="/admin/doctors"
+              element={<DoctorVerificationPage />}
+            />
             
             {/* Doctor-only routes */}
             <Route 
@@ -143,6 +153,10 @@ function AppContent() {
               path="/chat-doctor"
               element={<ChatWithPatients />}
             />
+            <Route
+              path="/doctor/pending"
+              element={<div className="p-8 text-center">Your account is pending verification. Please wait for admin approval.</div>}
+            />  
             
             {/* Patient-only routes */}
             <Route 

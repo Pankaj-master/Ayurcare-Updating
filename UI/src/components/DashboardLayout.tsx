@@ -4,21 +4,20 @@ import {
   LayoutDashboard,
   Users,
   Database,
-  FileText,
-  BarChart3,
   Settings,
   Search,
   Bell,
   LogOut,
   Leaf,
-  Bookmark,
   ChefHat,
   PieChart,
   Wand2,
+  BarChart3,
   History,
   MessageCircle,
   Clock,
 } from "lucide-react";
+
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -29,72 +28,48 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+
 import { Badge } from "./ui/badge";
 import { useAuth } from "../contexts/AuthContext";
-import LanguageSwitcher from '../components/ui/languageSwitcher';
+import LanguageSwitcher from "../components/ui/languageSwitcher";
 import { useTranslation } from "react-i18next";
 
 
-// ----------------------
-// UPDATED NAV ITEMS
-// ----------------------
+// ------------------------------------
+// SUPER ADMIN NAVIGATION
+// ------------------------------------
+const adminNavigationItems = (t: any) => [
+  { id: "dashboard", label: "Admin Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
+  { id: "doctors", label: "Verify Doctors", icon: Users, path: "/admin/doctors" },
+  // { id: "patients", label: "Patients", icon: Users, path: "/admin/patients" },
+  // { id: "staff", label: "Staff Management", icon: Users, path: "/admin/staff" },
+  // { id: "settings", label: "Settings", icon: Settings, path: "/admin/settings" },
+];
 
+
+// ------------------------------------
+// DOCTOR NAVIGATION
+// ------------------------------------
 const doctorNavigationItems = (t: any) => [
-  {
-    id: "dashboard",
-    label: t("sidebar.dashboard"),
-    icon: LayoutDashboard,
-    path: "/dashboard",
-  },
+  { id: "dashboard", label: t("sidebar.dashboard"), icon: LayoutDashboard, path: "/dashboard" },
   { id: "patients", label: t("sidebar.patients"), icon: Users, path: "/patients" },
-  // {
-  //   id: "diet-chart",
-  //   label: t("sidebar.dietChart"),
-  //   icon: PieChart,
-  //   path: "/diet-chart",
-  // },
-  // {
-  //   id: "diet-plans",
-  //   label: t("sidebar.dietPlans"),
-  //   icon: Bookmark,
-  //   path: "/diet-plans",
-  // },
+
   { id: "create-diet-plans", label: t("sidebar.dietPlans"), icon: ChefHat, path: "/create-diet-plans" },
-  {
-    id: "auto-generate",
-    label: t("sidebar.autoGenerate"),
-    icon: Wand2,
-    path: "/auto-generate",
-  },
-  {
-    id: "food-database",
-    label: t("sidebar.foodDatabase"),
-    icon: Database,
-    path: "/food-database",
-  },
+  { id: "auto-generate", label: t("sidebar.autoGenerate"), icon: Wand2, path: "/auto-generate" },
+  { id: "food-database", label: t("sidebar.foodDatabase"), icon: Database, path: "/food-database" },
+
   { id: "chat", label: t("sidebar.chat"), icon: MessageCircle, path: "/chat-doctor" },
   { id: "settings", label: t("sidebar.settings"), icon: Settings, path: "/settings" },
 ];
 
+
+// ------------------------------------
+// PATIENT NAVIGATION
+// ------------------------------------
 const patientNavigationItems = (t: any) => [
-  {
-    id: "dashboard",
-    label: t("sidebar.dashboard"),
-    icon: LayoutDashboard,
-    path: "/dashboard",
-  },
-  {
-    id: "diet-history",
-    label: t("sidebar.dietHistory"),
-    icon: History,
-    path: "/diet-history",
-  },
-  {
-    id: "diet-chart",
-    label: t("sidebar.dietChart"),
-    icon: PieChart,
-    path: "/diet-chart",
-  },
+  { id: "dashboard", label: t("sidebar.dashboard"), icon: LayoutDashboard, path: "/dashboard" },
+  { id: "diet-history", label: t("sidebar.dietHistory"), icon: History, path: "/diet-history" },
+  { id: "diet-chart", label: t("sidebar.dietChart"), icon: PieChart, path: "/diet-chart" },
   { id: "chat", label: t("sidebar.chatWithDoctor"), icon: MessageCircle, path: "/chat" },
   { id: "reports", label: t("sidebar.reports"), icon: BarChart3, path: "/reports" },
   { id: "reminders", label: t("sidebar.reminders"), icon: Clock, path: "/reminders" },
@@ -102,18 +77,51 @@ const patientNavigationItems = (t: any) => [
 ];
 
 
+// ------------------------------------
+// STAFF NAVIGATION
+// ------------------------------------
+const staffNavigationItems = (t: any) => [
+  { id: "dashboard", label: "Staff Dashboard", icon: LayoutDashboard, path: "/staff/dashboard" },
+  { id: "patients", label: "Assigned Patients", icon: Users, path: "/staff/patients" },
+  { id: "chat", label: "Chat", icon: MessageCircle, path: "/staff/chat" },
+];
+
+
+// ------------------------------------
+// MAIN LAYOUT COMPONENT
+// ------------------------------------
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
   const { t } = useTranslation();
 
-  const handleNavigation = (path: string) => {
-    navigate(path);
-  };
+  const handleNavigation = (path: string) => navigate(path);
 
-  const navigationItems =
-    user?.role === "PATIENT" ? patientNavigationItems(t) : doctorNavigationItems(t);
+  // --------------------------
+  // ROLE-BASED NAVIGATION LOGIC
+  // --------------------------
+  let navigationItems: any[] = [];
+
+  if (user?.role === "SUPER_ADMIN") {
+    navigationItems = adminNavigationItems(t);
+
+  } else if (user?.role === "DOCTOR") {
+    if (user?.is_verified !== "VERIFIED") {
+      navigationItems = [
+        { id: "pending", label: "Verification Pending", icon: Clock, path: "/doctor/pending" }
+      ];
+    } else {
+      navigationItems = doctorNavigationItems(t);
+    }
+
+  } else if (user?.role === "STAFF") {
+    navigationItems = staffNavigationItems(t);
+
+  } else {
+    navigationItems = patientNavigationItems(t);
+  }
+
 
   return (
     <div className="flex h-screen bg-background">

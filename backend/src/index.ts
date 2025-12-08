@@ -20,6 +20,7 @@ import chatRoutes from './routes/chat';
 import reminderRoutes from './routes/reminders';
 import healthRecordRoutes from './routes/healthRecords';
 import diseaseRoutes from "./routes/desease";
+import superAdmin from "./routes/superAdmin";
 
 
 // Load environment variables
@@ -106,6 +107,7 @@ app.use('/api/diet-plans', dietPlanRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/reminders', reminderRoutes);
 app.use('/api/health-records', healthRecordRoutes);
+app.use('/api/super-admin', superAdmin);
 
 // Error handling middleware
 app.use(notFound);

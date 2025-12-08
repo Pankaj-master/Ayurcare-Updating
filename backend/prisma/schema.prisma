@@ -13,6 +13,14 @@ datasource db {
 enum UserRole {
   DOCTOR
   PATIENT
+  SUPER_ADMIN
+  STAFF
+}
+
+enum Verified {
+  PENDING
+  VERIFIED
+  REJECTED
 }
 
 enum DoshaType {
@@ -72,6 +80,7 @@ model User {
   medications    String?
   diseaseId   String?
   disease     Disease? @relation(fields: [diseaseId], references: [id], onDelete: SetNull)
+  is_verified    Verified?
 
 
   // Relations

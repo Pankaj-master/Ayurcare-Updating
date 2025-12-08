@@ -278,4 +278,26 @@ export const diseaseAPI = {
   delete: (id: string) => api.delete(`/diseases/${id}`),
 };
 
+export const superAdminAPI = {
+  // 📌 GET all doctors (verified + unverified)
+  getAllDoctors: () => api.get("/super-admin/doctors"),
+
+  // 📌 GET only pending doctors
+  getPendingDoctors: () => api.get("/super-admin/doctors/pending"),
+
+  // 📌 GET doctor by ID
+  getDoctorById: (id: string) => api.get(`/super-admin/doctors/${id}`),
+
+  // 📌 APPROVE doctor
+  approveDoctor: (id: string) =>
+    api.post(`/super-admin/doctors/${id}/approve`),
+
+  // 📌 REJECT doctor
+  rejectDoctor: (id: string, reason?: string) =>
+    api.post(`/super-admin/doctors/${id}/reject`, { notes: reason }),
+
+  // 📌 GET admin dashboard stats
+  getStats: () => api.get("/super-admin/stats"),
+};
+
 export default api;

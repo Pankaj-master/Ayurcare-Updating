@@ -11,7 +11,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: "DOCTOR" | "PATIENT";
+  role: "DOCTOR" | "PATIENT" | "SUPER_ADMIN" | "STAFF";
   avatar?: string;
   phone?: string;
   address?: string;
@@ -24,6 +24,7 @@ interface User {
   medicalHistory?: string;
   allergies?: string;
   medications?: string;
+  is_verified?: "PENDING" | "VERIFIED" | "REJECTED";
 }
 
 interface AuthState {
