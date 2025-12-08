@@ -24,7 +24,8 @@ export const updateUserSchema = Joi.object({
   doshaType: Joi.string().valid('VATA', 'PITTA', 'KAPHA', 'TRIDOSHA').optional(),
   medicalHistory: Joi.string().optional(),
   allergies: Joi.string().optional(),
-  medications: Joi.string().optional()
+  medications: Joi.string().optional(),
+  diseaseId: Joi.string().optional()
 });
 
 

@@ -70,6 +70,9 @@ model User {
   medicalHistory String?
   allergies      String?
   medications    String?
+  diseaseId   String?
+  disease     Disease? @relation(fields: [diseaseId], references: [id], onDelete: SetNull)
+
 
   // Relations
   doctorPatients     Patient[]      @relation("DoctorPatients")       // doctor → patients
@@ -126,7 +129,10 @@ model Food {
   fiber         Float?
   vitamins      String?      // JSON string
   minerals      String?      // JSON string
-  doshaEffects  String?      // JSON: effects on Vata/Pitta/Kapha
+  // ⭐ Individual dosha columns
+  vata          Int?      @default(0) // -1, 0, 1
+  pitta         Int?      @default(0) // -1, 0, 1
+  kapha         Int?      @default(0) // -1, 0, 1
   benefits      String?      // JSON: health benefits
   precautions   String?      // JSON: avoid if...
 
@@ -235,6 +241,23 @@ model DietPlanItem {
   food       Food?     @relation(fields: [foodId], references: [id])
 
   @@map("diet_plan_items")
+}
+
+model Disease {
+  id          String   @id @default(cuid())
+  name        String   @unique
+
+  // Dosha Impact: +1 = increases, -1 = decreases, 0 = neutral
+  vata   Int     @default(0)
+  pitta  Int     @default(0)
+  kapha  Int     @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users    User[]
+
+  @@map("disease")
 }
 
 model HealthRecord {

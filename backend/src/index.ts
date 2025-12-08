@@ -19,6 +19,8 @@ import dietPlanRoutes from './routes/dietPlans';
 import chatRoutes from './routes/chat';
 import reminderRoutes from './routes/reminders';
 import healthRecordRoutes from './routes/healthRecords';
+import diseaseRoutes from "./routes/desease";
+
 
 // Load environment variables
 dotenv.config();
@@ -96,6 +98,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/diseases', diseaseRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/foods', foodRoutes);
 app.use('/api/recipes', recipeRoutes);

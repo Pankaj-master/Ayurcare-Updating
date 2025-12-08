@@ -1,13 +1,23 @@
-import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { AuthRequest, UserResponse, ApiResponse, PaginatedResponse } from '../types';
+import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
+import {
+  AuthRequest,
+  UserResponse,
+  ApiResponse,
+  PaginatedResponse,
+} from "../types";
 
 const prisma = new PrismaClient();
 
 export class UserController {
   async getAllUsers(req: Request, res: Response): Promise<void> {
     try {
-      const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+      const {
+        page = 1,
+        limit = 10,
+        sortBy = "createdAt",
+        sortOrder = "desc",
+      } = req.query;
       const skip = (Number(page) - 1) * Number(limit);
 
       const [users, total] = await Promise.all([
@@ -34,17 +44,27 @@ export class UserController {
             allergies: true,
             medications: true,
             createdAt: true,
-            updatedAt: true
-          }
+            updatedAt: true,
+
+            disease: {
+              select: {
+                id: true,
+                name: true,
+                vata: true,
+                pitta: true,
+                kapha: true,
+              },
+            },
+          },
         }),
-        prisma.user.count()
+        prisma.user.count(),
       ]);
 
       const totalPages = Math.ceil(total / Number(limit));
 
       const response: ApiResponse<PaginatedResponse<UserResponse>> = {
         success: true,
-        message: 'Users retrieved successfully',
+        message: "Users retrieved successfully",
         data: {
           data: users,
           pagination: {
@@ -53,9 +73,9 @@ export class UserController {
             total,
             totalPages,
             hasNext: Number(page) < totalPages,
-            hasPrev: Number(page) > 1
-          }
-        }
+            hasPrev: Number(page) > 1,
+          },
+        },
       };
 
       res.json(response);
@@ -63,8 +83,8 @@ export class UserController {
     } catch (error) {
       const response: ApiResponse = {
         success: false,
-        message: 'Error retrieving users',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error retrieving users",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
       res.status(500).json(response);
       return;
@@ -96,14 +116,24 @@ export class UserController {
           allergies: true,
           medications: true,
           createdAt: true,
-          updatedAt: true
-        }
+          updatedAt: true,
+
+          disease: {
+            select: {
+              id: true,
+              name: true,
+              vata: true,
+              pitta: true,
+              kapha: true,
+            },
+          },
+        },
       });
 
       if (!user) {
         const response: ApiResponse = {
           success: false,
-          message: 'User not found'
+          message: "User not found",
         };
         res.status(404).json(response);
         return;
@@ -111,8 +141,8 @@ export class UserController {
 
       const response: ApiResponse<UserResponse> = {
         success: true,
-        message: 'User retrieved successfully',
-        data: user
+        message: "User retrieved successfully",
+        data: user,
       };
 
       res.json(response);
@@ -120,8 +150,8 @@ export class UserController {
     } catch (error) {
       const response: ApiResponse = {
         success: false,
-        message: 'Error retrieving user',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error retrieving user",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
       res.status(500).json(response);
       return;
@@ -155,14 +185,14 @@ export class UserController {
           allergies: true,
           medications: true,
           createdAt: true,
-          updatedAt: true
-        }
+          updatedAt: true,
+        },
       });
 
       const response: ApiResponse<UserResponse> = {
         success: true,
-        message: 'User updated successfully',
-        data: user
+        message: "User updated successfully",
+        data: user,
       };
 
       res.json(response);
@@ -170,8 +200,8 @@ export class UserController {
     } catch (error) {
       const response: ApiResponse = {
         success: false,
-        message: 'Error updating user',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error updating user",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
       res.status(500).json(response);
       return;
@@ -184,12 +214,12 @@ export class UserController {
 
       await prisma.user.update({
         where: { id },
-        data: { isActive: false }
+        data: { isActive: false },
       });
 
       const response: ApiResponse = {
         success: true,
-        message: 'User deleted successfully'
+        message: "User deleted successfully",
       };
 
       res.json(response);
@@ -197,8 +227,8 @@ export class UserController {
     } catch (error) {
       const response: ApiResponse = {
         success: false,
-        message: 'Error deleting user',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error deleting user",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
       res.status(500).json(response);
       return;
@@ -230,14 +260,14 @@ export class UserController {
           allergies: true,
           medications: true,
           createdAt: true,
-          updatedAt: true
-        }
+          updatedAt: true,
+        },
       });
 
       if (!user) {
         const response: ApiResponse = {
           success: false,
-          message: 'User not found'
+          message: "User not found",
         };
         res.status(404).json(response);
         return;
@@ -245,8 +275,8 @@ export class UserController {
 
       const response: ApiResponse<UserResponse> = {
         success: true,
-        message: 'Profile retrieved successfully',
-        data: user
+        message: "Profile retrieved successfully",
+        data: user,
       };
 
       res.json(response);
@@ -254,8 +284,8 @@ export class UserController {
     } catch (error) {
       const response: ApiResponse = {
         success: false,
-        message: 'Error retrieving profile',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error retrieving profile",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
       res.status(500).json(response);
       return;
@@ -289,14 +319,14 @@ export class UserController {
           allergies: true,
           medications: true,
           createdAt: true,
-          updatedAt: true
-        }
+          updatedAt: true,
+        },
       });
 
       const response: ApiResponse<UserResponse> = {
         success: true,
-        message: 'Profile updated successfully',
-        data: user
+        message: "Profile updated successfully",
+        data: user,
       };
 
       res.json(response);
@@ -304,8 +334,8 @@ export class UserController {
     } catch (error) {
       const response: ApiResponse = {
         success: false,
-        message: 'Error updating profile',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: "Error updating profile",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
       res.status(500).json(response);
       return;
