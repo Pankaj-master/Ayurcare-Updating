@@ -103,6 +103,31 @@ const parseDoshaEffects = (doshaEffects) => {
   }
 };
 
+// --------------------------------------------
+// DOSHA FILTERING BASED ON DISEASE
+// --------------------------------------------
+const applyDiseaseDoshaFilter = (food, disease) => {
+  if (!disease) return true; // no disease → show all foods
+
+  // Disease rule: 1 = aggravated → reduce = food -1
+  //               -1 = weakened   → increase = food 1
+  //                0 = neutral    → ignore dosha
+
+  // Vata rules
+  if (disease.vata === 1 && food.vata !== -1) return false;
+  if (disease.vata === -1 && food.vata !== 1) return false;
+
+  // Pitta rules
+  if (disease.pitta === 1 && food.pitta !== -1) return false;
+  if (disease.pitta === -1 && food.pitta !== 1) return false;
+
+  // Kapha rules
+  if (disease.kapha === 1 && food.kapha !== -1) return false;
+  if (disease.kapha === -1 && food.kapha !== 1) return false;
+
+  return true;
+};
+
 /* --------------------------------------------
    MAIN COMPONENT
 ---------------------------------------------*/
@@ -134,6 +159,7 @@ export function CreateDietPlans() {
   const [activeMealType, setActiveMealType] = useState("breakfast");
 
   const [pantrySearch, setPantrySearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
 
   /* --------------------------------------------
      Load dynamic data from backend
@@ -271,7 +297,6 @@ export function CreateDietPlans() {
         newPlanMeta.description || `Diet plan for ${newPlanMeta.duration} days`,
       doctorId: doctorInfo.id,
       patientId: newPlanMeta.patientId,
-      doshaType: newPlanMeta.doshaType,
       duration: newPlanMeta.duration || days.length,
       items: items, // ✔ Only items
       // ❌ DO NOT SEND totals here
@@ -495,6 +520,16 @@ export function CreateDietPlans() {
    CREATE / EDIT PLAN MODE — CLEAN WHITE UI (Option B)
    ==========================================================*/
   if (isCreatePlanOpen) {
+    const selectedPatient = patients.find(
+      (p) => p.userId === newPlanMeta.patientId
+    );
+
+    const formatDoshaValue = (value) => {
+      if (value === 1) return "increases";
+      if (value === -1) return "decreases";
+      return ""; // for 0 → empty
+    };
+
     return (
       <div className="min-h-screen p-6 bg-background">
         {/* Outer Wrapper */}
@@ -559,26 +594,41 @@ export function CreateDietPlans() {
                     ))}
                   </SelectContent>
                 </Select>
+                {newPlanMeta.patientId && (
+                  <div className="px-4 py-2 rounded-lg bg-muted text-sm text-foreground border">
+                    <div className="font-semibold">
+                      Disease: {selectedPatient?.disease?.name || "None"}
+                    </div>
 
-                {/* Dosha Select */}
-                <Select
-                  value={newPlanMeta.doshaType}
-                  onValueChange={(v) =>
-                    setNewPlanMeta({ ...newPlanMeta, doshaType: v })
-                  }
-                >
-                  <SelectTrigger className="w-32 h-10 bg-card border border-border">
-                    <SelectValue placeholder="Dosha" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="VATA">Vata</SelectItem>
-                    <SelectItem value="PITTA">Pitta</SelectItem>
-                    <SelectItem value="KAPHA">Kapha</SelectItem>
-                    <SelectItem value="VATA_PITTA">Vata-Pitta</SelectItem>
-                    <SelectItem value="VATA_KAPHA">Vata-Kapha</SelectItem>
-                    <SelectItem value="PITTA_KAPHA">Pitta-Kapha</SelectItem>
-                  </SelectContent>
-                </Select>
+                    {selectedPatient?.disease && (
+                      <div className="text-xs text-muted-foreground space-y-1 mt-1">
+                        {/* VATA */}
+                        {selectedPatient.disease.vata !== 0 && (
+                          <div>
+                            Vata:{" "}
+                            {formatDoshaValue(selectedPatient.disease.vata)}
+                          </div>
+                        )}
+
+                        {/* PITTA */}
+                        {selectedPatient.disease.pitta !== 0 && (
+                          <div>
+                            Pitta:{" "}
+                            {formatDoshaValue(selectedPatient.disease.pitta)}
+                          </div>
+                        )}
+
+                        {/* KAPHA */}
+                        {selectedPatient.disease.kapha !== 0 && (
+                          <div>
+                            Kapha:{" "}
+                            {formatDoshaValue(selectedPatient.disease.kapha)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Duration Input */}
                 <Input
@@ -690,24 +740,28 @@ export function CreateDietPlans() {
 
               {/* Filters */}
               <div className="flex flex-wrap gap-2 mb-4 shrink-0">
-                <Badge variant="outline" className="cursor-pointer bg-muted">
-                  All
-                </Badge>
-                <Badge variant="outline" className="cursor-pointer bg-muted">
-                  Grains
-                </Badge>
-                <Badge variant="outline" className="cursor-pointer bg-muted">
-                  Dairy
-                </Badge>
-                <Badge variant="outline" className="cursor-pointer bg-muted">
-                  Vegetables
-                </Badge>
+                {["All", "Grains", "Dairy", "Vegetables"].map((cat) => (
+                  <Badge
+                    key={cat}
+                    variant="outline"
+                    onClick={() => setActiveCategory(cat)}
+                    className={`cursor-pointer ${
+                      activeCategory === cat
+                        ? "bg-primary text-white"
+                        : "bg-muted"
+                    }`}
+                  >
+                    {cat}
+                  </Badge>
+                ))}
               </div>
 
               {/* TRUE SCROLL AREA */}
               <ScrollArea className="flex-1 min-h-0">
                 <div className="grid grid-cols-2 gap-3 p-2 rounded-lg">
                   {foods
+
+                    // 🔍 Search filter
                     .filter(
                       (f) =>
                         f.name
@@ -717,6 +771,19 @@ export function CreateDietPlans() {
                           .toLowerCase()
                           .includes(pantrySearch.toLowerCase())
                     )
+
+                    // ⭐ DISEASE-BASED DOSHA FILTER
+                    .filter((f) => {
+                      const selectedPatient = patients.find(
+                        (p) => p.userId === newPlanMeta.patientId // ✔ FIXED
+                      );
+
+                      return applyDiseaseDoshaFilter(
+                        f,
+                        selectedPatient?.disease
+                      );
+                    })
+
                     .map((food) => (
                       <FoodCard
                         key={food.id}
@@ -1073,9 +1140,9 @@ function FoodCard({ food, onAdd }) {
         {/* 2. Small Image (1:1 Ratio) */}
         <div className="shrink-0">
           <div className="w-16 h-16 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center border">
-            {food.image ? (
+            {food.imageUrl ? (
               <img
-                src={food.image}
+                src={food.imageUrl}
                 alt={food.name}
                 className="w-full h-full object-cover"
               />

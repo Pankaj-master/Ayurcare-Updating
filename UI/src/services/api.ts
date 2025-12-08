@@ -247,4 +247,35 @@ export const healthRecordsAPI = {
   delete: (id: string) => api.delete(`/health-records/${id}`),
 };
 
+export const diseaseAPI = {
+  // GET all diseases (supports pagination)
+  getAll: (params?: { page?: number; limit?: number }) =>
+    api.get("/diseases", { params }),
+
+  // CREATE disease (Doctor-only)
+  create: (data: {
+    name: string;
+    vata: number;
+    pitta: number;
+    kapha: number;
+  }) => api.post("/diseases", data),
+
+  // GET disease by ID
+  getById: (id: string) => api.get(`/diseases/${id}`),
+
+  // UPDATE disease (Doctor-only)
+  update: (
+    id: string,
+    data: {
+      name?: string;
+      vata?: number;
+      pitta?: number;
+      kapha?: number;
+    }
+  ) => api.put(`/diseases/${id}`, data),
+
+  // DELETE disease
+  delete: (id: string) => api.delete(`/diseases/${id}`),
+};
+
 export default api;

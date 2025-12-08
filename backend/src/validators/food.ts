@@ -18,7 +18,9 @@ export const createFoodSchema = Joi.object({
   fat: Joi.number().min(0).optional(),
 
   // Ayurvedic + JSON fields
-  doshaEffects: Joi.string().optional(),  // JSON string (ex: '{"vata": "increase"}')
+  vata: Joi.number().optional(),
+  pitta: Joi.number().optional(),
+  kapha: Joi.number().optional(), // JSON string (ex: '{"vata": "increase"}')
   rasa: Joi.string().optional(),
   virya: Joi.string().optional(),
   guna: Joi.string().optional(),
@@ -50,7 +52,9 @@ export const updateFoodSchema = Joi.object({
   fat: Joi.number().min(0).optional(),
 
   // Ayurvedic + JSON fields
-  doshaEffects: Joi.string().optional(),
+  vata: Joi.number().optional(),
+  pitta: Joi.number().optional(),
+  kapha: Joi.number().optional(),
   benefits: Joi.string().optional(),
   precautions: Joi.string().optional(),
   rasa: Joi.string().optional(),

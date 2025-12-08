@@ -65,6 +65,7 @@ export class PatientController {
         bowelMovement,
         phone,
         address,
+        diseaseId,
       } = req.body;
 
       // 1. Generate temp password

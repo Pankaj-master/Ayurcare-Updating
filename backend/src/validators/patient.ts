@@ -28,6 +28,7 @@ export const createPatientSchema = Joi.object({
   mealFrequency: Joi.number().integer().min(1).max(20).optional(),
   waterIntake: Joi.number().positive().optional(),
   notes: Joi.string().optional(),
+  diseaseId: Joi.string().optional(),
 });
 
 
