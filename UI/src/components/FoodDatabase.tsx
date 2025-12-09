@@ -36,6 +36,10 @@ export function FoodDatabase() {
   const [filterCategory, setFilterCategory] = useState("all");
   const [isAddFoodOpen, setIsAddFoodOpen] = useState(false);
 
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(12); // You can change this
+  const [totalPages, setTotalPages] = useState(1);
+
   const [newFood, setNewFood] = useState({
     name: "",
     category: "",
@@ -71,8 +75,18 @@ export function FoodDatabase() {
   useEffect(() => {
     const fetchFoods = async () => {
       try {
-        const response = await foodsAPI.getAll();
+        const response = await foodsAPI.getAll({
+          page,
+          limit,
+          search: searchTerm || undefined,
+          category: filterCategory !== "all" ? filterCategory : undefined,
+        });
+
         const raw = response.data?.data?.data || [];
+        const pagination = response.data?.data?.pagination;
+
+        setTotalPages(pagination?.totalPages || 1);
+        setPage(pagination?.page || 1);
 
         const formatted = raw.map((food) => ({
           id: food.id,
@@ -84,16 +98,13 @@ export function FoodDatabase() {
           fat: food.fat,
           description: food.description,
 
-          // NEW — Ayurveda fields
           rasa: food.rasa,
           virya: food.virya,
           guna: food.guna,
           vipaka: food.vipaka,
-
           doshaEffects: food.doshaEffects,
           benefits: food.benefits,
           precautions: food.precautions,
-
           imageUrl: food.imageUrl,
         }));
 
@@ -104,7 +115,7 @@ export function FoodDatabase() {
     };
 
     fetchFoods();
-  }, []);
+  }, [page, limit, searchTerm, filterCategory]);
 
   const formatCategory = (category) => {
     const map = {
@@ -530,6 +541,46 @@ export function FoodDatabase() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="flex justify-center items-center gap-2 mt-6">
+        <Button
+          variant="outline"
+          disabled={page === 1}
+          onClick={() => setPage(page - 1)}
+        >
+          Prev
+        </Button>
+
+        <span className="text-sm">
+          Page {page} of {totalPages}
+        </span>
+
+        <Button
+          variant="outline"
+          disabled={page === totalPages}
+          onClick={() => setPage(page + 1)}
+        >
+          Next
+        </Button>
+      </div>
+
+      <div className="flex justify-center mt-3">
+        <Select
+          value={String(limit)}
+          onValueChange={(v) => setLimit(Number(v))}
+        >
+          <SelectTrigger className="w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="6">6 per page</SelectItem>
+            <SelectItem value="12">12 per page</SelectItem>
+            <SelectItem value="24">24 per page</SelectItem>
+            <SelectItem value="50">50 per page</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {filteredFoods.length === 0 && (

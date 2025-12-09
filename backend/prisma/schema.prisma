@@ -122,6 +122,16 @@ model Patient {
 
   @@map("patients")
 }
+model DoctorStaff {
+  id        String @id @default(cuid())
+  doctorId  String
+  staffId   String
+
+  doctor    User   @relation("DoctorStaffDoctor", fields: [doctorId], references: [id])
+  staff     User   @relation("DoctorStaffStaff", fields: [staffId], references: [id])
+
+  createdAt DateTime @default(now())
+}
 
 
 model Food {

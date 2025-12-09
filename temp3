@@ -1,0 +1,514 @@
+// FULLY DYNAMIC UPDATED VERSION
+// (Mock data removed, backend-connected, API-integrated)
+
+import React, { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Badge } from "./ui/badge";
+import { ScrollArea } from "./ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./ui/table";
+import { Progress } from "./ui/progress";
+import {
+  Plus,
+  Search,
+  Filter,
+  Eye,
+  Edit,
+  Trash2,
+  Calendar,
+  User,
+  ChevronLeft,
+  Save,
+  Utensils,
+  Clock,
+} from "lucide-react";
+
+import { dietPlansAPI } from "../api/dietPlansAPI";
+import { foodsAPI } from "../api/foodsAPI";
+import { patientsAPI } from "../api/patientsAPI";
+
+/* --------------------------------------------
+   Helper: Nutrition Calculation
+---------------------------------------------*/
+const calculateNutrition = (foodItem, qtyGrams) => {
+  const ratio = qtyGrams / 100;
+  return {
+    calories: Math.round((foodItem?.calories || 0) * ratio),
+    protein: Math.round((foodItem?.protein || 0) * ratio),
+    carbs: Math.round((foodItem?.carbs || 0) * ratio),
+    fat: Math.round((foodItem?.fat || 0) * ratio),
+  };
+};
+
+const mealTypeToEnum = (mealType) => {
+  const map = {
+    breakfast: "BREAKFAST",
+    lunch: "LUNCH",
+    dinner: "DINNER",
+    snack: "SNACK",
+  };
+  return map[mealType];
+};
+
+const getDoshaColor = (dosha) => {
+  if (!dosha) return "bg-slate-100 text-slate-700 border-slate-200";
+  if (dosha.includes("Vata")) return "bg-blue-100 text-blue-700 border-blue-200";
+  if (dosha.includes("Pitta")) return "bg-red-100 text-red-700 border-red-200";
+  if (dosha.includes("Kapha")) return "bg-green-100 text-green-700 border-green-200";
+  return "bg-slate-100 text-slate-700 border-slate-200";
+};
+
+/* --------------------------------------------
+   MAIN COMPONENT
+---------------------------------------------*/
+export function CreateDietPlans() {
+  const [dietPlans, setDietPlans] = useState([]);
+  const [patients, setPatients] = useState([]);
+  const [foods, setFoods] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // UI states
+  const [isCreatePlanOpen, setIsCreatePlanOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Plan meta
+  const [newPlanMeta, setNewPlanMeta] = useState({
+    patientId: "",
+    planName: "",
+  });
+
+  // Days editor
+  const [days, setDays] = useState([
+    { id: 1, meals: { breakfast: [], lunch: [], snack: [], dinner: [] } },
+  ]);
+  const [activeDayIndex, setActiveDayIndex] = useState(0);
+  const [activeMealType, setActiveMealType] = useState("breakfast");
+
+  const [pantrySearch, setPantrySearch] = useState("");
+
+  /* --------------------------------------------
+     Load dynamic data from backend
+  ---------------------------------------------*/
+  useEffect(() => {
+    const loadInitial = async () => {
+      setLoading(true);
+      try {
+        const plansRes = await dietPlansAPI.getAll();
+        const patientsRes = await patientsAPI.getByDoctor();
+        const foodsRes = await foodsAPI.getAll();
+
+        setDietPlans(plansRes?.data?.data || []);
+        setPatients(patientsRes?.data?.data || []);
+        setFoods(foodsRes?.data?.data || []);
+      } catch (err) {
+        console.error("Failed loading initial data", err);
+      }
+      setLoading(false);
+    };
+
+    loadInitial();
+  }, []);
+
+  /* --------------------------------------------
+     Convert days → API format
+  ---------------------------------------------*/
+  const convertDaysForAPI = () => {
+    const items = [];
+    days.forEach((day) => {
+      const dayNumber = day.id;
+      Object.keys(day.meals).forEach((mealKey) => {
+        day.meals[mealKey].forEach((it) => {
+          items.push({
+            dayNumber,
+            mealType: mealTypeToEnum(mealKey),
+            foodId: it.food.id,
+            quantity: it.quantity,
+            unit: "gram",
+            notes: it.notes || null,
+            time: it.time || null,
+          });
+        });
+      });
+    });
+    return items;
+  };
+
+  /* --------------------------------------------
+     Save diet plan to backend
+  ---------------------------------------------*/
+  const handleSavePlan = async () => {
+    if (!newPlanMeta.planName || !newPlanMeta.patientId) {
+      alert("Enter plan name & select patient");
+      return;
+    }
+
+    const payload = {
+      name: newPlanMeta.planName,
+      patientId: newPlanMeta.patientId,
+      duration: days.length,
+      items: convertDaysForAPI(),
+    };
+
+    try {
+      const res = await dietPlansAPI.create(payload);
+      const created = res?.data?.data || res?.data;
+
+      if (created) setDietPlans((prev) => [created, ...prev]);
+
+      // reset
+      setIsCreatePlanOpen(false);
+      setNewPlanMeta({ patientId: "", planName: "" });
+      setDays([{ id: 1, meals: { breakfast: [], lunch: [], snack: [], dinner: [] } }]);
+
+      alert("Plan created successfully");
+    } catch (err) {
+      console.error("Error saving plan", err);
+      alert("Failed to save plan");
+    }
+  };
+
+  /* --------------------------------------------
+     Add/remove foods
+  ---------------------------------------------*/
+  const handleAddDay = () => {
+    const newDay = days.length + 1;
+    setDays([...days, { id: newDay, meals: { breakfast: [], lunch: [], snack: [], dinner: [] } }]);
+    setActiveDayIndex(days.length);
+  };
+
+  const handleAddFoodToMeal = (food) => {
+    const newDays = JSON.parse(JSON.stringify(days));
+    newDays[activeDayIndex].meals[activeMealType].push({
+      instanceId: Date.now() + Math.random(),
+      food,
+      quantity: 100,
+      notes: "",
+      time: "",
+    });
+    setDays(newDays);
+  };
+
+  const handleRemoveFood = (meal, id) => {
+    const newDays = JSON.parse(JSON.stringify(days));
+    newDays[activeDayIndex].meals[meal] = newDays[activeDayIndex].meals[meal].filter((i) => i.instanceId !== id);
+    setDays(newDays);
+  };
+
+  const handleUpdateQty = (meal, id, qty) => {
+    const newDays = JSON.parse(JSON.stringify(days));
+    const it = newDays[activeDayIndex].meals[meal].find((i) => i.instanceId === id);
+    if (it) it.quantity = Number(qty);
+    setDays(newDays);
+  };
+
+  const handleUpdateNote = (meal, id, note) => {
+    const newDays = JSON.parse(JSON.stringify(days));
+    const it = newDays[activeDayIndex].meals[meal].find((i) => i.instanceId === id);
+    if (it) it.notes = note;
+    setDays(newDays);
+  };
+
+  const handleUpdateTime = (meal, id, time) => {
+    const newDays = JSON.parse(JSON.stringify(days));
+    const it = newDays[activeDayIndex].meals[meal].find((i) => i.instanceId === id);
+    if (it) it.time = time;
+    setDays(newDays);
+  };
+
+  /* --------------------------------------------
+     Calculate totals
+  ---------------------------------------------*/
+  const calculateDayTotals = (index) => {
+    const day = days[index];
+    const totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+    if (!day) return totals;
+
+    Object.keys(day.meals).forEach((meal) => {
+      day.meals[meal].forEach((item) => {
+        const stats = calculateNutrition(item.food, item.quantity);
+        totals.calories += stats.calories;
+        totals.protein += stats.protein;
+        totals.carbs += stats.carbs;
+        totals.fat += stats.fat;
+      });
+    });
+
+    return totals;
+  };
+
+  const currentTotals = calculateDayTotals(activeDayIndex);
+
+  /* =====================================================================================
+     RENDER: CREATE PLAN MODE
+  =====================================================================================*/
+  if (isCreatePlanOpen) {
+    return (
+      <div className="flex flex-col h-screen border rounded-xl overflow-hidden bg-white">
+        {/* Top Bar */}
+        <div className="h-16 border-b px-6 flex items-center justify-between bg-card">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => setIsCreatePlanOpen(false)}>
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <Input
+              placeholder="Plan Name"
+              className="text-lg font-bold border-none shadow-none"
+              value={newPlanMeta.planName}
+              onChange={(e) => setNewPlanMeta({ ...newPlanMeta, planName: e.target.value })}
+            />
+
+            <Select
+              value={newPlanMeta.patientId}
+              onValueChange={(v) => setNewPlanMeta({ ...newPlanMeta, patientId: v })}
+            >
+              <SelectTrigger className="w-40 ml-4">
+                <SelectValue placeholder="Select Patient" />
+              </SelectTrigger>
+              <SelectContent>
+                {patients.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button onClick={handleSavePlan} className="bg-primary text-white">
+            <Save className="w-4 h-4 mr-2" /> Save Plan
+          </Button>
+        </div>
+
+        <div className="flex flex-1 overflow-hidden">
+          {/* LEFT: Day builder */}
+          <div className="w-2/3 border-r p-6 overflow-y-auto bg-white">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-bold">Day {days[activeDayIndex]?.id}</h2>
+                <p className="text-sm text-muted-foreground">Configure meals for this day</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="text-sm text-muted-foreground">Calories: {currentTotals.calories} kcal</div>
+                <Button variant="outline" size="icon" onClick={handleAddDay}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Meal sections */}
+            <div className="space-y-6">
+              {Object.keys(days[activeDayIndex].meals).map((m) => (
+                <MealSection
+                  key={m}
+                  title={m}
+                  time={m === "breakfast" ? "07:30" : m === "lunch" ? "13:00" : m === "snack" ? "16:00" : "20:00"}
+                  mealType={m}
+                  items={days[activeDayIndex].meals[m]}
+                  isActive={activeMealType === m}
+                  onActivate={() => setActiveMealType(m)}
+                  onRemove={handleRemoveFood}
+                  onUpdateQty={handleUpdateQty}
+                  onUpdateNote={handleUpdateNote}
+                  onUpdateTime={handleUpdateTime}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* RIGHT: Pantry */}
+          <div className="w-1/3 p-4 bg-gray-50 overflow-y-auto">
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold">Food Pantry</h3>
+                <Badge>Adding to: {activeMealType.toUpperCase()}</Badge>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                <Input placeholder="Search food..." className="pl-10" value={pantrySearch} onChange={(e) => setPantrySearch(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              {foods
+                .filter((f) => f.name.toLowerCase().includes(pantrySearch.toLowerCase()))
+                .map((food) => (
+                  <FoodCard key={food.id} food={food} onAdd={() => handleAddFoodToMeal(food)} />
+                ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom timeline */}
+        <div className="h-16 border-t flex items-center px-4">
+          <div className="flex items-center gap-2 overflow-x-auto">
+            {days.map((d, idx) => (
+              <button key={d.id} onClick={() => setActiveDayIndex(idx)} className={`px-4 py-2 rounded-full ${idx === activeDayIndex ? 'bg-primary text-white' : 'bg-background'}`}>
+                Day {d.id}
+              </button>
+            ))}
+            <Button variant="outline" size="icon" onClick={handleAddDay}>
+              <Plus />
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ----------------------------------------------------
+     RENDER: DASHBOARD MODE
+  ----------------------------------------------------- */
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Diet Plans</h1>
+          <p className="text-sm text-muted-foreground">Doctor dashboard</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input placeholder="Search plans..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <Button onClick={() => setIsCreatePlanOpen(true)} className="bg-primary text-white"><Plus className="w-4 h-4 mr-2"/> Create Plan</Button>
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>All Plans</CardTitle>
+          <CardDescription>Recent diet plans</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Patient</TableHead>
+                <TableHead>Plan</TableHead>
+                <TableHead>Duration</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {dietPlans.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center"><User className="w-4 h-4 text-primary"/></div>
+                      {p.patient?.name || p.patientId}
+                    </div>
+                  </TableCell>
+                  <TableCell>{p.name}</TableCell>
+                  <TableCell>{p.duration}</TableCell>
+                  <TableCell>{new Date(p.createdAt).toLocaleString()}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="ghost"><Eye/></Button>
+                      <Button size="sm" variant="ghost" onClick={() => setDietPlans((prev) => prev.filter(x => x.id !== p.id))}><Trash2/></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/* ---------------------------------------
+   SUB-COMPONENTS
+----------------------------------------- */
+
+function MealSection({ title, time, mealType, items, isActive, onActivate, onRemove, onUpdateQty, onUpdateNote, onUpdateTime }) {
+  const total = items.reduce((acc, cur) => acc + calculateNutrition(cur.food, cur.quantity).calories, 0);
+
+  return (
+    <div className={`p-4 border rounded-lg ${isActive ? 'border-primary' : 'border-muted'}`} onClick={onActivate}>
+      <div className="flex justify-between items-center mb-3">
+        <div>
+          <div className="font-bold">{title.toUpperCase()}</div>
+          <div className="text-xs text-muted-foreground"><Clock className="inline-block mr-1"/> {time}</div>
+        </div>
+        <div className="text-sm font-bold">{total} kcal</div>
+      </div>
+
+      <div className="space-y-2">
+        {items.length === 0 && <div className="text-sm text-muted-foreground">No foods added</div>}
+        {items.map((it) => (
+          <AddedFoodRow key={it.instanceId} item={it} mealType={mealType} onRemove={onRemove} onUpdateQty={onUpdateQty} onUpdateNote={onUpdateNote} onUpdateTime={onUpdateTime} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AddedFoodRow({ item, mealType, onRemove, onUpdateQty, onUpdateNote, onUpdateTime }) {
+  const n = calculateNutrition(item.food, item.quantity);
+  return (
+    <div className="flex items-center justify-between bg-white p-3 rounded border">
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <div className="font-semibold">{item.food.name}</div>
+          <div className={`text-[10px] px-1 rounded ${getDoshaColor(item.food.dosha)}`}>{item.food.dosha}</div>
+        </div>
+        <div className="text-xs text-muted-foreground">{n.calories} kcal • P {n.protein}g</div>
+        <div className="mt-2 flex gap-2">
+          <Input value={item.notes} placeholder="notes" onChange={(e) => onUpdateNote(mealType, item.instanceId, e.target.value)} />
+          <Input value={item.time} placeholder="HH:MM" onChange={(e) => onUpdateTime(mealType, item.instanceId, e.target.value)} />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input type="number" className="w-16 text-center" value={item.quantity} onChange={(e) => onUpdateQty(mealType, item.instanceId, e.target.value)} />
+        <button onClick={() => onRemove(mealType, item.instanceId)} className="text-destructive"><Trash2/></button>
+      </div>
+    </div>
+  );
+}
+
+function FoodCard({ food, onAdd }) {
+  return (
+    <div className="p-3 border rounded-lg bg-white flex flex-col">
+      <div className="flex justify-between items-start mb-2">
+        <div>
+          <div className="font-bold text-sm">{food.name}</div>
+          <div className="text-xs text-muted-foreground">{food.category} • 100g</div>
+        </div>
+        <div>
+          <Button size="sm" variant="secondary" onClick={onAdd}><Plus/></Button>
+        </div>
+      </div>
+
+      <div className="mt-auto text-xs text-muted-foreground grid grid-cols-4 gap-2">
+        <div className="text-center"><div className="font-bold">{food.calories}</div><div>Cal</div></div>
+        <div className="text-center"><div className="font-bold">{food.protein}</div><div>Pro</div></div>
+        <div className="text-center"><div className="font-bold">{food.carbs}</div><div>Carb</div></div>
+        <div className="text-center"><div className="font-bold">{food.fat}</div><div>Fat</div></div>
+      </div>
+    </div>
+  );
+}

@@ -20,9 +20,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Leaf, Sparkles, ArrowRight, ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export function LoginPage() {
   const { login, register, clearError } = useAuth();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [regStep, setRegStep] = useState(1);
 
@@ -53,18 +55,23 @@ export function LoginPage() {
 
   // --- HANDLERS ---
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (!loginData.email || !loginData.password || !loginData.role) {
-      toast.error("Please fill in all fields");
-      return;
-    }
+
     try {
       setIsLoading(true);
       clearError();
+
       await login(loginData);
+
+      // REDIRECT BASED ON ROLE
+      if (loginData.role === "SUPER_ADMIN") navigate("/admin/dashboard");
+      else if (loginData.role === "DOCTOR") navigate("/doctor/dashboard");
+      else if (loginData.role === "STAFF") navigate("/staff/dashboard");
+      else navigate("/patient/dashboard");
+
       toast.success("Login successful!");
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || "Login failed");
     } finally {
       setIsLoading(false);
@@ -136,6 +143,17 @@ export function LoginPage() {
       // 'basePayload' now only contains the relevant keys
       await register(basePayload);
       toast.success("Registration successful!");
+
+      // 🔥 ROLE-BASED REDIRECTION AFTER REGISTER
+      if (registerData.role === "SUPER_ADMIN") {
+        navigate("/admin/dashboard");
+      } else if (registerData.role === "DOCTOR") {
+        navigate("/doctor/pending"); // Doctor MUST be approved first
+      } else if (registerData.role === "STAFF") {
+        navigate("/dashboard"); // or /staff/dashboard
+      } else {
+        navigate("/dashboard"); // PATIENT dashboard
+      }
     } catch (error: any) {
       toast.error(error.message || "Registration failed");
     } finally {

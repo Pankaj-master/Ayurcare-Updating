@@ -1,89 +1,69 @@
-import React, { useState } from "react";
-
-// Layout components
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
-
-// Inputs
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { Switch } from "../components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../components/ui/select";
-import { Textarea } from "../components/ui/textarea";
-
-// User avatar
-import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
-
-// Tabs & UI utilities
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../components/ui/tabs";
-import { Separator } from "../components/ui/separator";
-
-// Icons
-import {
-  User,
-  Building,
-  Shield,
-  Bell,
-  Palette,
-  Database,
-  Download,
-  Upload,
-  Save,
-  Eye,
-  EyeOff,
-  Stethoscope,
-} from "lucide-react";
-
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useTranslation } from "react-i18next";
+import { authAPI, usersAPI, patientsAPI } from "../services/api";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/Tabs";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "./ui/Card";
+import { Avatar, AvatarImage, AvatarFallback } from "./ui/Avatar";
+import { Label } from "./ui/Label";
+import { Input } from "./ui/Input";
+import { Textarea } from "./ui/Textarea";
+import { Button } from "./ui/Button";
+import { Stethoscope, Shield, Eye, EyeOff } from "lucide-react";
+import { Separator } from "./ui/Separator";
+import { Switch } from "./ui/Switch";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "./ui/Select";
 
-import { authAPI , usersAPI} from "../services/api";
-
-export function PatientSettings({ patient }) {
-  const { user } = useAuth(); // dynamic user data
+export function PatientSettings() {
+  const { user } = useAuth();
   const { t } = useTranslation();
 
+  const [loading, setLoading] = useState(true);
+
+  // -------------------------------------------
+  // USER FIELDS (Editable via /users/:id)
+  // -------------------------------------------
+
   const [profileData, setProfileData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
-    age: user?.age || "",
-    gender: user?.gender || "",
-    address: user?.address || "",
-    patientCode: patient?.patientCode || "",
-    createdAt: patient?.createdAt ? patient.createdAt.split("T")[0] : "",
+    name: "",
+    email: "",
+    phone: "",
+    age: "",
+    gender: "",
+    address: "",
+    doshaType: "",
+    medicalHistory: "",
+    allergies: "",
+    medications: "",
+    createdAt: "",
   });
 
+  // -------------------------------------------
+  // PATIENT FIELDS (Editable via /patients/:id)
+  // -------------------------------------------
+
   const [medicalData, setMedicalData] = useState({
-    doshaType: user?.doshaType || "",
-    medicalHistory: user?.medicalHistory || "",
-    allergies: user?.allergies || "",
-    medications: user?.medications || "",
-    height: patient?.height || "",
-    weight: patient?.weight || "",
-    sleepPattern: patient?.sleepPattern || "",
-    bowelMovement: patient?.bowelMovement || "",
-    bloodGroup: patient?.bloodGroup || "",
-    mealFrequency: patient?.mealFrequency || "",
-    waterIntake: patient?.waterIntake || "",
-    notes: patient?.notes || "",
+    height: "",
+    weight: "",
+    sleepPattern: "",
+    bowelMovement: "",
+    bloodGroup: "",
+    mealFrequency: "",
+    waterIntake: "",
+    notes: "",
+    patientCode: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -92,75 +72,137 @@ export function PatientSettings({ patient }) {
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
-    twoFactorAuth: false,
-    sessionTimeout: "30",
   });
 
-  const handleSaveProfile = async () => {
+  const [avatarFile, setAvatarFile] = useState(null);
+
+  // -------------------------------------------
+  // FETCH DATA FROM /auth/me
+  // -------------------------------------------
+
+  const loadData = async () => {
     try {
-      const userId = user?.id; // logged-in user ID
-      if (!userId) return alert("User ID missing");
+      const res = await authAPI.getMe();
+      const u = res.data.data;
+      const p = u.patient;
 
-      // Prepare data to send to API
-      const updatedData = {
-        name: profileData.name,
-        email: profileData.email,
-        phone: profileData.phone,
-        age: Number(profileData.age),
-        gender: profileData.gender,
-        address: profileData.address,
-      };
+      // ---- USER DATA ----
+      setProfileData({
+        name: u.name ?? "",
+        email: u.email ?? "",
+        phone: u.phone ?? "",
+        age: u.age ?? "",
+        gender: u.gender ?? "",
+        address: u.address ?? "",
+        doshaType: u.doshaType ?? "",
+        medicalHistory: u.medicalHistory ?? "",
+        allergies: u.allergies ?? "",
+        medications: u.medications ?? "",
+        createdAt: u.createdAt ? u.createdAt.split("T")[0] : "",
+      });
 
-      // Call API
-      const res = await usersAPI.update(userId, updatedData);
+      // ---- PATIENT DATA ----
+      setMedicalData({
+        height: p?.height ?? "",
+        weight: p?.weight ?? "",
+        sleepPattern: p?.sleepPattern ?? "",
+        bowelMovement: p?.bowelMovement ?? "",
+        bloodGroup: p?.bloodGroup ?? "",
+        mealFrequency: p?.mealFrequency ?? "",
+        waterIntake: p?.waterIntake ?? "",
+        notes: p?.notes ?? "",
+        patientCode: p?.patientCode ?? "",
+      });
 
-      // Optional UI update
-      if (res?.data?.success) {
-        alert("Profile updated successfully!");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Error updating profile");
+      setLoading(false);
+    } catch (err) {
+      console.error("Error loading profile:", err);
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // -------------------------------------------
+  // UPDATE USER TABLE: /users/:id
+  // -------------------------------------------
+
+  const handleSaveProfile = async () => {
+    try {
+      const formData = new FormData();
+
+      // Append image if selected
+      if (avatarFile) {
+        formData.append("avatar", avatarFile);
+      }
+
+      // Append user fields (must convert to string)
+      formData.append("name", profileData.name);
+      formData.append("phone", profileData.phone);
+      formData.append("gender", profileData.gender);
+      formData.append("age", profileData.age.toString());
+      formData.append("address", profileData.address);
+      formData.append("doshaType", profileData.doshaType);
+      formData.append("medicalHistory", profileData.medicalHistory);
+      formData.append("allergies", profileData.allergies);
+      formData.append("medications", profileData.medications);
+      if (avatarFile) {
+        formData.append("avatar", avatarFile);
+      }
+
+      await usersAPI.update(user.id, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      alert("Profile updated!");
+      loadData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update profile");
+    }
+  };
+
+  // -------------------------------------------
+  // UPDATE PATIENT TABLE: /patients/:id
+  // -------------------------------------------
+
   const handleSaveMedical = async () => {
     try {
-      const userId = user?.id;
-      if (!userId) return alert("User ID missing");
-
-      // Prepare medical data to send to API
-      const updatedData = {
-        doshaType: medicalData.doshaType,
-        medicalHistory: medicalData.medicalHistory,
-        allergies: medicalData.allergies,
-        medications: medicalData.medications,
+      const updatedPatient = {
         height: Number(medicalData.height),
         weight: Number(medicalData.weight),
         sleepPattern: medicalData.sleepPattern,
         bowelMovement: medicalData.bowelMovement,
         bloodGroup: medicalData.bloodGroup,
-        mealFrequency: medicalData.mealFrequency ? Number(medicalData.mealFrequency) : null,
-        waterIntake: medicalData.waterIntake ? Number(medicalData.waterIntake) : null,
+        mealFrequency: medicalData.mealFrequency
+          ? Number(medicalData.mealFrequency)
+          : null,
+        waterIntake: medicalData.waterIntake
+          ? Number(medicalData.waterIntake)
+          : null,
         notes: medicalData.notes,
       };
 
-      // Call API
-      const res = await usersAPI.update(userId, updatedData);
+      const patientId = user.patient?.id;
+      await patientsAPI.update(patientId, updatedPatient);
 
-      if (res?.data?.success) {
-        alert("Medical information updated successfully!");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Error updating medical information");
+      alert("Medical information updated!");
+      loadData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update medical info");
     }
   };
 
+  // -------------------------------------------
+  // UPDATE PASSWORD — stays the same
+  // -------------------------------------------
+
   const handleChangePassword = async () => {
     if (security.newPassword !== security.confirmPassword) {
-      alert("New passwords do not match!");
-      return;
+      return alert("New passwords do not match!");
     }
 
     try {
@@ -169,16 +211,16 @@ export function PatientSettings({ patient }) {
         newPassword: security.newPassword,
       });
 
-      alert(res.data.message || "Password changed successfully!");
+      alert(res.data.message || "Password changed!");
 
       setSecurity({
-        ...security,
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
       });
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to change password");
+      console.error(err);
+      alert("Failed to change password");
     }
   };
 
@@ -217,11 +259,40 @@ export function PatientSettings({ patient }) {
               {/* Avatar */}
               <div className="flex items-center space-x-4">
                 <Avatar className="w-24 h-24 ring-2 ring-primary">
-                  <AvatarImage src={user?.avatar} />
-                  <AvatarFallback className="text-xl font-bold">
+                  <AvatarImage
+                    src={
+                      avatarFile
+                        ? URL.createObjectURL(avatarFile) // preview before upload
+                        : user?.avatar
+                    }
+                  />
+                  <AvatarFallback>
                     {user?.name?.charAt(0)?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
+
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    id="avatarUpload"
+                    onChange={(e) => setAvatarFile(e.target.files[0])}
+                  />
+
+                  <label
+                    htmlFor="avatarUpload"
+                    className="cursor-pointer text-primary underline"
+                  >
+                    Change Picture
+                  </label>
+
+                  {avatarFile && (
+                    <p className="text-sm text-muted-foreground">
+                      Selected: {avatarFile.name}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* 2-column Grid for cleaner layout */}
@@ -350,7 +421,10 @@ export function PatientSettings({ patient }) {
                     className="border border-gray-300"
                     value={medicalData.doshaType}
                     onChange={(e) =>
-                      setMedicalData({ ...medicalData, doshaType: e.target.value })
+                      setMedicalData({
+                        ...medicalData,
+                        doshaType: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -362,7 +436,10 @@ export function PatientSettings({ patient }) {
                     className="border border-gray-300"
                     value={medicalData.bloodGroup}
                     onChange={(e) =>
-                      setMedicalData({ ...medicalData, bloodGroup: e.target.value })
+                      setMedicalData({
+                        ...medicalData,
+                        bloodGroup: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -401,7 +478,10 @@ export function PatientSettings({ patient }) {
                     type="number"
                     value={medicalData.mealFrequency}
                     onChange={(e) =>
-                      setMedicalData({ ...medicalData, mealFrequency: e.target.value })
+                      setMedicalData({
+                        ...medicalData,
+                        mealFrequency: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -415,7 +495,10 @@ export function PatientSettings({ patient }) {
                     step="0.1"
                     value={medicalData.waterIntake}
                     onChange={(e) =>
-                      setMedicalData({ ...medicalData, waterIntake: e.target.value })
+                      setMedicalData({
+                        ...medicalData,
+                        waterIntake: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -427,7 +510,10 @@ export function PatientSettings({ patient }) {
                     className="border border-gray-300"
                     value={medicalData.sleepPattern}
                     onChange={(e) =>
-                      setMedicalData({ ...medicalData, sleepPattern: e.target.value })
+                      setMedicalData({
+                        ...medicalData,
+                        sleepPattern: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -439,7 +525,10 @@ export function PatientSettings({ patient }) {
                     className="border border-gray-300"
                     value={medicalData.bowelMovement}
                     onChange={(e) =>
-                      setMedicalData({ ...medicalData, bowelMovement: e.target.value })
+                      setMedicalData({
+                        ...medicalData,
+                        bowelMovement: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -448,7 +537,7 @@ export function PatientSettings({ patient }) {
               {/* Text areas for longer medical information */}
               <div className="space-y-4">
                 {/* Medical History */}
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label>Medical History</Label>
                   <Textarea
                     value={medicalData.medicalHistory}
@@ -458,7 +547,7 @@ export function PatientSettings({ patient }) {
                       setMedicalData({ ...medicalData, medicalHistory: e.target.value })
                     }
                   />
-                </div>
+                </div> */}
 
                 {/* Allergies */}
                 <div className="space-y-2">
@@ -468,13 +557,16 @@ export function PatientSettings({ patient }) {
                     className="border border-gray-300"
                     placeholder="Any known allergies to medications, food, or environmental factors"
                     onChange={(e) =>
-                      setMedicalData({ ...medicalData, allergies: e.target.value })
+                      setMedicalData({
+                        ...medicalData,
+                        allergies: e.target.value,
+                      })
                     }
                   />
                 </div>
 
                 {/* Medications */}
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label>Current Medications</Label>
                   <Textarea
                     value={medicalData.medications}
@@ -484,7 +576,7 @@ export function PatientSettings({ patient }) {
                       setMedicalData({ ...medicalData, medications: e.target.value })
                     }
                   />
-                </div>
+                </div> */}
 
                 {/* Notes */}
                 <div className="space-y-2">

@@ -215,6 +215,32 @@ export default function PremiumDietChartDynamic() {
       mounted = false;
     };
   }, []);
+  const InfoCard = ({ label, value, icon: Icon, color = "text-primary" }) => (
+  <div className="group p-4 rounded-xl border bg-card shadow-sm hover:shadow-md transition-all duration-200 flex items-start gap-3">
+    
+    {/* Icon */}
+    {Icon && (
+      <div
+        className={`p-2 rounded-lg bg-primary/10 ${color} group-hover:bg-primary/20 transition-all`}
+      >
+        <Icon className="w-4 h-4" />
+      </div>
+    )}
+
+    {/* Text */}
+    <div className="flex flex-col">
+      <p className="text-xs text-muted-foreground font-semibold tracking-wide">
+        {label}
+      </p>
+      <p className="text-sm font-medium mt-1 text-foreground">
+        {value ?? "-"}
+      </p>
+    </div>
+
+  </div>
+);
+
+
 
   // group items by day
   const itemsByDay = useMemo(() => {
@@ -244,6 +270,46 @@ export default function PremiumDietChartDynamic() {
     });
     return map;
   }, [activeItems]);
+
+  // ---------------- AYURVEDIC SUMMARY (FULLY DYNAMIC) ----------------
+  const ayurvedicSummary = useMemo(() => {
+    if (!plan) return null;
+
+    const rasaSet = new Set<string>();
+    const viryaSet = new Set<string>();
+    const gunaSet = new Set<string>();
+    const vipakaSet = new Set<string>();
+
+    let vata = 0;
+    let pitta = 0;
+    let kapha = 0;
+
+    plan.items.forEach((item) => {
+      const f = item.food;
+      if (!f) return;
+
+      // Collect rasa / virya / guna / vipaka
+      if (f.rasa) rasaSet.add(f.rasa);
+      if (f.virya) viryaSet.add(f.virya);
+      if (f.guna) gunaSet.add(f.guna);
+      if (f.vipaka) vipakaSet.add(f.vipaka);
+
+      // Collect doshas
+      if (typeof f.vata === "number") vata += f.vata;
+      if (typeof f.pitta === "number") pitta += f.pitta;
+      if (typeof f.kapha === "number") kapha += f.kapha;
+    });
+
+    return {
+      rasa: [...rasaSet],
+      virya: [...viryaSet],
+      guna: [...gunaSet],
+      vipaka: [...vipakaSet],
+      vata,
+      pitta,
+      kapha,
+    };
+  }, [plan]);
 
   // stats for the active day - prefer per-item totals if present
   const stats = useMemo(() => {
@@ -522,13 +588,7 @@ export default function PremiumDietChartDynamic() {
   return (
     <div className="min-h-screen bg-[#FDFCF8] text-stone-800 font-sans selection:bg-orange-100 p-6">
       <div className="flex justify-between items-center mb-4">
-        <div>
-          <h1 className="text-2xl font-semibold">{plan.name}</h1>
-          <p className="text-sm text-muted-foreground">{plan.description}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Patient: {user?.name ?? "Patient"} • Dosha: {plan.doshaType ?? "-"}
-          </p>
-        </div>
+        
 
         <div className="flex items-center gap-3">
           <Button variant="outline" onClick={handleDownloadPDF}>
@@ -555,44 +615,80 @@ export default function PremiumDietChartDynamic() {
         ))}
       </div>
 
-      {/* Nutrition overview */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-        <MacroChip
-          icon={Flame}
-          label="Calories"
-          value={stats.calories}
-          unit="kcal"
-          color="text-orange-600"
-        />
-        <MacroChip
-          icon={Activity}
-          label="Protein"
-          value={stats.protein}
-          unit="g"
-          color="text-blue-600"
-        />
-        <MacroChip
-          icon={Wheat}
-          label="Carbs"
-          value={stats.carbs}
-          unit="g"
-          color="text-amber-600"
-        />
-        <MacroChip
-          icon={Droplets}
-          label="Fats"
-          value={stats.fat}
-          unit="g"
-          color="text-rose-600"
-        />
-        <MacroChip
-          icon={Flame}
-          label="Fiber"
-          value={stats.fiber}
-          unit="g"
-          color="text-green-600"
-        />
+      {/* 🔥 Unified Ayurvedic + Nutrition Summary */}
+<div className="mt-6 space-y-8">
+
+  {/* Ayurvedic Summary */}
+  {ayurvedicSummary && (
+    <div>
+      <h2 className="text-lg font-medium mb-3">Ayurvedic Properties</h2>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+        <InfoCard label="Rasa" value={ayurvedicSummary.rasa.join(", ") || "-"} />
+        <InfoCard label="Virya" value={ayurvedicSummary.virya.join(", ") || "-"} />
+        <InfoCard label="Vipaka" value={ayurvedicSummary.vipaka.join(", ") || "-"} />
+        <InfoCard label="Guna" value={ayurvedicSummary.guna.join(", ") || "-"} />
+
       </div>
+    </div>
+  )}
+
+  {/* Dosha Impact */}
+  {ayurvedicSummary && (
+    <div>
+      <h2 className="text-lg font-medium mb-3">Dosha Impact</h2>
+
+      <div className="grid grid-cols-3 gap-4">
+
+        <InfoCard
+          label="Vata"
+          value={
+            (ayurvedicSummary.vata > 0 ? "Increase (↑)" :
+            ayurvedicSummary.vata < 0 ? "Decrease (↓)" : "Neutral")
+            + ` (${ayurvedicSummary.vata})`
+          }
+        />
+
+        <InfoCard
+          label="Pitta"
+          value={
+            (ayurvedicSummary.pitta > 0 ? "Increase (↑)" :
+            ayurvedicSummary.pitta < 0 ? "Decrease (↓)" : "Neutral")
+            + ` (${ayurvedicSummary.pitta})`
+          }
+        />
+
+        <InfoCard
+          label="Kapha"
+          value={
+            (ayurvedicSummary.kapha > 0 ? "Increase (↑)" :
+            ayurvedicSummary.kapha < 0 ? "Decrease (↓)" : "Neutral")
+            + ` (${ayurvedicSummary.kapha})`
+          }
+        />
+
+      </div>
+    </div>
+  )}
+
+  {/* Nutrition Summary */}
+  <div>
+    <h2 className="text-lg font-medium mb-3">Nutrition Overview</h2>
+
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+
+      <InfoCard label="Calories" value={`${Math.round(stats.calories)} kcal`} />
+      <InfoCard label="Protein" value={`${Math.round(stats.protein)} g`} />
+      <InfoCard label="Carbs" value={`${Math.round(stats.carbs)} g`} />
+      <InfoCard label="Fats" value={`${Math.round(stats.fat)} g`} />
+      <InfoCard label="Fiber" value={`${Math.round(stats.fiber)} g`} />
+
+    </div>
+  </div>
+
+</div>
+
 
       {/* Meals */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -33,6 +33,8 @@ import { Badge } from "./ui/badge";
 import { useAuth } from "../contexts/AuthContext";
 import LanguageSwitcher from "../components/ui/languageSwitcher";
 import { useTranslation } from "react-i18next";
+import TranslateSwitcher from "./TranslateSwitcher";
+import { translatePage } from "../utils/fullTranslate";
 
 
 // ------------------------------------
@@ -55,7 +57,6 @@ const doctorNavigationItems = (t: any) => [
   { id: "patients", label: t("sidebar.patients"), icon: Users, path: "/patients" },
 
   { id: "create-diet-plans", label: t("sidebar.dietPlans"), icon: ChefHat, path: "/create-diet-plans" },
-  { id: "auto-generate", label: t("sidebar.autoGenerate"), icon: Wand2, path: "/auto-generate" },
   { id: "food-database", label: t("sidebar.foodDatabase"), icon: Database, path: "/food-database" },
 
   { id: "chat", label: t("sidebar.chat"), icon: MessageCircle, path: "/chat-doctor" },
@@ -68,11 +69,12 @@ const doctorNavigationItems = (t: any) => [
 // ------------------------------------
 const patientNavigationItems = (t: any) => [
   { id: "dashboard", label: t("sidebar.dashboard"), icon: LayoutDashboard, path: "/dashboard" },
-  { id: "diet-history", label: t("sidebar.dietHistory"), icon: History, path: "/diet-history" },
   { id: "diet-chart", label: t("sidebar.dietChart"), icon: PieChart, path: "/diet-chart" },
   { id: "chat", label: t("sidebar.chatWithDoctor"), icon: MessageCircle, path: "/chat" },
-  { id: "reports", label: t("sidebar.reports"), icon: BarChart3, path: "/reports" },
+  { id: "auto-generate", label: t("sidebar.autoGenerate"), icon: Wand2, path: "/auto-generate" },
+  // { id: "reports", label: t("sidebar.reports"), icon: BarChart3, path: "/reports" },
   { id: "reminders", label: t("sidebar.reminders"), icon: Clock, path: "/reminders" },
+  { id: "recipes", label: "Recipes", icon: ChefHat, path: "/recipes" },
   { id: "patient-settings", label: t("sidebar.patientSettings"), icon: Settings, path: "/patient-settings" },
 ];
 
@@ -201,8 +203,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* 🌐 Language Switcher */}
-            <LanguageSwitcher />
+            {/* Language Toggle */}
+            <TranslateSwitcher />
 
             {/* Notifications */}
             <Button variant="ghost" size="icon" className="relative">
@@ -212,24 +214,19 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </Badge>
             </Button>
 
-            {/* User Menu */}
+            {/* User Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center space-x-2">
                   <Avatar className="w-8 h-8">
                     <AvatarImage src={user?.avatar} />
                     <AvatarFallback className="bg-primary/10 text-primary">
-                      {user?.name
-                        ?.split(" ")
-                        .map((n) => n[0])
-                        .join("")}
+                      {user?.name?.split(" ").map((n) => n[0]).join("")}
                     </AvatarFallback>
                   </Avatar>
                   <div className="text-left">
                     <p className="text-sm">{user?.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {user?.email}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
@@ -237,14 +234,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={() => navigate("/settings")}>
                   <Settings className="w-4 h-4 mr-2" />
-                  {t("userMenu.settings")}
+                  Settings
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
 
-                <DropdownMenuItem onClick={logout} className="text-destructive">
+                <DropdownMenuItem
+                  onClick={logout}
+                  className="text-destructive"
+                >
                   <LogOut className="w-4 h-4 mr-2" />
-                  {t("userMenu.logout")}
+                  Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -7,3 +7,5 @@ UI/src/components/.vscode/
 UI/.env
 backend/.env
 backend/prisma/migrations/
+Models/__pycache__/
+Models/diet_model.joblib

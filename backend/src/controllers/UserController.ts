@@ -163,6 +163,10 @@ export class UserController {
       const { id } = req.params;
       const updateData = req.body;
 
+      if (req.file) {
+      updateData.avatar = `/uploads/${req.file.filename}`;
+    }
+
       const user = await prisma.user.update({
         where: { id },
         data: updateData,

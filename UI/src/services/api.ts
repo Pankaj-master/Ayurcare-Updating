@@ -92,10 +92,15 @@ export const usersAPI = {
 
   getById: (id: string) => api.get(`/users/${id}`),
 
-  update: (id: string, data: any) => api.put(`/users/${id}`, data),
+  update: (id: string, data: any) =>
+  api.put(`/users/${id}`, data, {
+    headers: { "Content-Type": "multipart/form-data" },
+  }),
+
 
   delete: (id: string) => api.delete(`/users/${id}`),
 };
+
 
 // Patients API
 export const patientsAPI = {
