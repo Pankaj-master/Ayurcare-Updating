@@ -8,28 +8,18 @@ import {
 } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import {
-  Users,
-  FileText,
-  Calendar,
-  Plus,
-  TrendingUp,
-  Activity,
-  Clock,
-  MessageCircle,
-} from "lucide-react";
+import { Users, FileText, Calendar, Plus, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
-  patientsAPI,
-  chatAPI,
-  dietPlansAPI,
-} from "../services/api";
+
+import { patientsAPI, chatAPI, dietPlansAPI } from "../services/api";
+
 import { useAuth } from "../contexts/AuthContext";
 
 export function DoctorDashboard() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user: currentUser } = useAuth();
 
   const [stats, setStats] = useState({
     totalPatients: 0,
@@ -38,48 +28,34 @@ export function DoctorDashboard() {
     unreadMessages: 0,
   });
 
-  const [todayPatients, setTodayPatients] = useState([]);
+  const [patients, setPatients] = useState([]);
   const [recentPlans, setRecentPlans] = useState([]);
 
-  const pendingTasks = [
-    {
-      id: 1,
-      task: "Review diet plan for Rajesh Kumar",
-      priority: "high",
-      dueTime: "In 2 hours",
-    },
-    {
-      id: 2,
-      task: "Follow-up call with Priya Sharma",
-      priority: "medium",
-      dueTime: "Tomorrow",
-    },
-    {
-      id: 3,
-      task: "Update food database with seasonal items",
-      priority: "low",
-      dueTime: "This week",
-    },
-  ];
-
-  const { user: currentUser } = useAuth();
+  const doshaColors = {
+    Vata: "bg-blue-100 text-blue-800",
+    Pitta: "bg-red-100 text-red-800",
+    Kapha: "bg-green-100 text-green-800",
+    "Vata-Pitta": "bg-purple-100 text-purple-800",
+    "Pitta-Kapha": "bg-orange-100 text-orange-800",
+    "Vata-Kapha": "bg-teal-100 text-teal-800",
+  };
 
   useEffect(() => {
+    // Load Patients (By Doctor)
     patientsAPI
-      .getAll()
+      .getByDoctor()
       .then((res) => {
-        const loggedInDoctorId = currentUser?.id;
-        const patients = (res.data.data?.patients || []).filter(
-          (p: any) => p.doctorId === loggedInDoctorId
-        );
+        const all = res.data.data || [];
+        setPatients(all);
 
         setStats((prev) => ({
           ...prev,
-          totalPatients: patients.length,
+          totalPatients: all.length,
         }));
       })
       .catch((err) => console.error("Error loading patients", err));
 
+    // Load Diet Plans
     dietPlansAPI
       .getAll()
       .then((res) => {
@@ -92,11 +68,12 @@ export function DoctorDashboard() {
       })
       .catch((err) => console.error("Error loading diet plans", err));
 
+    // Load Chat Messages
     chatAPI
       .getAll()
       .then((res) => {
         const msgs = res.data.data || [];
-        const unread = msgs.filter((m: any) => !m.isRead).length;
+        const unread = msgs.filter((m) => !m.isRead).length;
 
         setStats((prev) => ({
           ...prev,
@@ -105,15 +82,6 @@ export function DoctorDashboard() {
       })
       .catch((err) => console.error("Error loading messages", err));
   }, []);
-
-  const doshaColors = {
-    Vata: "bg-blue-100 text-blue-800",
-    Pitta: "bg-red-100 text-red-800",
-    Kapha: "bg-green-100 text-green-800",
-    "Vata-Pitta": "bg-purple-100 text-purple-800",
-    "Pitta-Kapha": "bg-orange-100 text-orange-800",
-    "Vata-Kapha": "bg-teal-100 text-teal-800",
-  };
 
   return (
     <div className="space-y-6">
@@ -125,6 +93,7 @@ export function DoctorDashboard() {
             {t("dashboard.welcomeMessage")}
           </p>
         </div>
+
         <Button
           onClick={() => navigate("/patients")}
           className="bg-primary hover:bg-primary/90"
@@ -136,7 +105,7 @@ export function DoctorDashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        
+        {/* Total Patients */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -153,6 +122,7 @@ export function DoctorDashboard() {
           </CardContent>
         </Card>
 
+        {/* Diet Plans Created */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -169,6 +139,7 @@ export function DoctorDashboard() {
           </CardContent>
         </Card>
 
+        {/* Today Consultations Placeholder */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -185,6 +156,7 @@ export function DoctorDashboard() {
           </CardContent>
         </Card>
 
+        {/* Unread Messages */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -202,142 +174,85 @@ export function DoctorDashboard() {
         </Card>
       </div>
 
-      {/* Today's Patients */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+        {/* Patients Overview */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calendar className="w-5 h-5 mr-2 text-primary" />
-              {t("doctorDashboard.todaysPatients")}
-            </CardTitle>
-            <CardDescription>
-              {t("doctorDashboard.todaysDescription")}
-            </CardDescription>
+            <CardTitle>Patients Overview</CardTitle>
+            <CardDescription>Recently added patients</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {todayPatients.map((patient: any) => (
-              <div
-                key={patient.id}
-                className="flex items-center justify-between p-3 rounded-lg border"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <p className="text-sm">{patient.name}</p>
-                    <Badge className={`text-xs ${doshaColors[patient.dosha]}`}>
-                      {patient.dosha}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                    <span className="flex items-center">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {patient.time}
-                    </span>
-                    <span>{patient.type}</span>
-                  </div>
-                </div>
-                <Badge
-                  variant={
-                    patient.status === "confirmed" ? "default" : "secondary"
-                  }
-                >
-                  {patient.status}
-                </Badge>
-              </div>
-            ))}
-            <Button variant="outline" className="w-full">
-              {t("doctorDashboard.viewAllAppointments")}
-            </Button>
-          </CardContent>
-        </Card>
 
-        {/* Recent Plans */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <FileText className="w-5 h-5 mr-2 text-primary" />
-              {t("doctorDashboard.recentPlans")}
-            </CardTitle>
-            <CardDescription>
-              {t("doctorDashboard.recentPlansDescription")}
-            </CardDescription>
-          </CardHeader>
           <CardContent className="space-y-4">
-            {recentPlans.map((plan: any) => (
-              <div
-                key={plan.id}
-                className="flex items-center justify-between p-3 rounded-lg border"
-              >
-                <div className="space-y-1">
-                  <p className="text-sm">{plan.patientName}</p>
-                  <p className="text-xs text-muted-foreground">{plan.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {plan.createdAt}
-                  </p>
-                </div>
-                <Badge
-                  variant={plan.status === "active" ? "default" : "secondary"}
+            {patients.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No patients found.
+              </p>
+            )}
+
+            {patients.slice(0, 5).map((p) => {
+              const dosha =
+                p?.disease &&
+                (p.disease.vata === 1
+                  ? "Vata"
+                  : p.disease.pitta === 1
+                  ? "Pitta"
+                  : p.disease.kapha === 1
+                  ? "Kapha"
+                  : null);
+
+              return (
+                <div
+                  key={p.patientId}
+                  className="flex items-center justify-between p-3 rounded-lg border"
                 >
-                  {plan.status}
-                </Badge>
-              </div>
-            ))}
+                  <div className="flex items-center space-x-3">
+                    <img
+                      src={
+                        p.avatar ||
+                        "https://ui-avatars.com/api/?name=" +
+                          encodeURIComponent(p.name)
+                      }
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+
+                    <div>
+                      <p className="text-sm font-medium">{p.name}</p>
+                      <p className="text-xs text-muted-foreground">{p.email}</p>
+
+                      {dosha && (
+                        <Badge className={`mt-1 text-xs ${doshaColors[dosha]}`}>
+                          {dosha}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/patients/${p.patientId}`)}
+                  >
+                    View
+                  </Button>
+                </div>
+              );
+            })}
+
             <Button
               variant="outline"
               className="w-full"
-              onClick={() => navigate("/diet-chart")}
+              onClick={() => navigate("/patients")}
             >
-              {t("doctorDashboard.viewAllPlans")}
+              View All Patients
             </Button>
           </CardContent>
         </Card>
-      </div>
 
-      {/* Pending Tasks + Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Quick Actions Only */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Activity className="w-5 h-5 mr-2 text-primary" />
-              {t("doctorDashboard.pendingTasks")}
-            </CardTitle>
-            <CardDescription>
-              {t("doctorDashboard.pendingTasksDescription")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {pendingTasks.map((task) => (
-              <div
-                key={task.id}
-                className="flex items-center justify-between p-3 rounded-lg border"
-              >
-                <div className="space-y-1">
-                  <p className="text-sm">{task.task}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {task.dueTime}
-                  </p>
-                </div>
-                <Badge
-                  variant={
-                    task.priority === "high"
-                      ? "destructive"
-                      : task.priority === "medium"
-                      ? "default"
-                      : "secondary"
-                  }
-                >
-                  {task.priority}
-                </Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("doctorDashboard.quickActions")}</CardTitle>
-            <CardDescription>
-              {t("doctorDashboard.quickActionsDescription")}
-            </CardDescription>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Shortcuts to essential actions</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <Button
@@ -346,7 +261,7 @@ export function DoctorDashboard() {
               onClick={() => navigate("/patients")}
             >
               <Plus className="w-4 h-4 mr-2" />
-              {t("doctorDashboard.addNewPatient")}
+              Add New Patient
             </Button>
 
             <Button
@@ -355,16 +270,7 @@ export function DoctorDashboard() {
               onClick={() => navigate("/diet-chart")}
             >
               <FileText className="w-4 h-4 mr-2" />
-              {t("doctorDashboard.createDietPlan")}
-            </Button>
-
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => navigate("/auto-generate")}
-            >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              {t("doctorDashboard.autoGenerateDiet")}
+              Create Diet Plan
             </Button>
 
             <Button
@@ -373,7 +279,7 @@ export function DoctorDashboard() {
               onClick={() => navigate("/food-database")}
             >
               <Plus className="w-4 h-4 mr-2" />
-              {t("doctorDashboard.addFoodItem")}
+              Add Food Item
             </Button>
           </CardContent>
         </Card>

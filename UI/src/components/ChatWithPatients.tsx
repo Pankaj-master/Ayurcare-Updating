@@ -5,12 +5,7 @@ import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Textarea } from "./ui/textarea";
-import {
-  CheckCheck,
-  Clock,
-  Search,
-  Send,
-} from "lucide-react";
+import { CheckCheck, Clock, Search, Send } from "lucide-react";
 import { io, Socket } from "socket.io-client";
 import { authAPI, patientsAPI, chatAPI } from "../services/api";
 import { useTranslation } from "react-i18next";
@@ -49,7 +44,8 @@ export function ChatWithPatients() {
   const { t } = useTranslation();
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [patients, setPatients] = useState<PatientListItem[]>([]);
-  const [selectedPatient, setSelectedPatient] = useState<PatientListItem | null>(null);
+  const [selectedPatient, setSelectedPatient] =
+    useState<PatientListItem | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -70,12 +66,23 @@ export function ChatWithPatients() {
     selectedPatientRef.current = selectedPatient;
   }, [selectedPatient]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottomInstant = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   };
 
+  const scrollToBottomSmooth = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  const shouldAutoScrollRef = useRef(false);
+
+  // Scroll ONLY when a new message is added live, not when switching patients
   useEffect(() => {
-    scrollToBottom();
+    if (!selectedPatient) return;
+
+    // Only scroll when new messages are added live
+    if (shouldAutoScrollRef.current) {
+      scrollToBottomSmooth();
+    }
   }, [messages]);
 
   // 1. Fetch Doctor Profile
@@ -111,8 +118,12 @@ export function ChatWithPatients() {
         }));
 
         mapped.sort((a, b) => {
-          const tA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
-          const tB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+          const tA = a.lastMessageTime
+            ? new Date(a.lastMessageTime).getTime()
+            : 0;
+          const tB = b.lastMessageTime
+            ? new Date(b.lastMessageTime).getTime()
+            : 0;
           return tB - tA;
         });
 
@@ -130,11 +141,11 @@ export function ChatWithPatients() {
 
     const API_URL = import.meta.env.VITE_API_URL || "";
     // Adjust based on your actual URL structure
-    const baseSocketUrl = API_URL.replace("/api", ""); 
-    
-    const socket = io(baseSocketUrl, { 
-      auth: { token }, 
-      transports: ["websocket"] 
+    const baseSocketUrl = API_URL.replace("/api", "");
+
+    const socket = io(baseSocketUrl, {
+      auth: { token },
+      transports: ["websocket"],
     });
 
     socketRef.current = socket;
@@ -156,12 +167,12 @@ export function ChatWithPatients() {
       if (msgSenderId === docId) return;
 
       const currentPatient = selectedPatientRef.current;
-      
+
       // Check if this message belongs to the CURRENTLY OPEN chat
       const isForCurrentChat =
         currentPatient &&
         (msgPatientId === String(currentPatient.id) ||
-         msgSenderId === String(currentPatient.userId));
+          msgSenderId === String(currentPatient.userId));
 
       // [A] Update Chat Window (only if relevant)
       if (isForCurrentChat) {
@@ -173,7 +184,10 @@ export function ChatWithPatients() {
 
         // Mark as read immediately
         if (!msg.isRead) {
-          socket.emit("messageRead", { messageIds: [msg.id], senderId: msg.senderId });
+          socket.emit("messageRead", {
+            messageIds: [msg.id],
+            senderId: msg.senderId,
+          });
           chatAPI.markAsRead(msg.id).catch(console.error);
         }
       }
@@ -182,9 +196,8 @@ export function ChatWithPatients() {
       setPatients((prev) => {
         const updatedPatients = prev.map((p) => {
           // 🔥 STRICT CHECK: Does this message belong to THIS specific patient in the loop?
-          const isMatch = 
-            String(p.userId) === msgSenderId || 
-            String(p.id) === msgPatientId;
+          const isMatch =
+            String(p.userId) === msgSenderId || String(p.id) === msgPatientId;
 
           if (isMatch) {
             return {
@@ -201,8 +214,12 @@ export function ChatWithPatients() {
 
         // Re-sort to bring latest message to top
         return updatedPatients.sort((a, b) => {
-          const tA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
-          const tB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+          const tA = a.lastMessageTime
+            ? new Date(a.lastMessageTime).getTime()
+            : 0;
+          const tB = b.lastMessageTime
+            ? new Date(b.lastMessageTime).getTime()
+            : 0;
           return tB - tA;
         });
       });
@@ -227,15 +244,21 @@ export function ChatWithPatients() {
     };
   }, [doctor, token]);
 
-
   const fetchConversation = async (patient: PatientListItem) => {
     if (!doctor) return;
+
+    shouldAutoScrollRef.current = false; // ⛔ disable smooth scroll (instant load)
     setLoadingMessages(true);
 
     try {
       const res = await chatAPI.getConversation(patient.userId);
       const msgs: ChatMessage[] = res.data.data ?? [];
       setMessages(msgs);
+
+      // Jump instantly to bottom WITH NO animation
+      setTimeout(() => {
+        scrollToBottomInstant();
+      }, 0);
 
       // Handle unread messages
       const unreadIds = msgs
@@ -250,7 +273,6 @@ export function ChatWithPatients() {
         unreadIds.forEach((id) => chatAPI.markAsRead(id));
       }
 
-      // Clear local unread count
       setPatients((prev) =>
         prev.map((p) => (p.id === patient.id ? { ...p, unreadCount: 0 } : p))
       );
@@ -269,6 +291,8 @@ export function ChatWithPatients() {
   const sendMessage = async () => {
     if (!newMessage.trim() || !doctor || !selectedPatient) return;
 
+    shouldAutoScrollRef.current = true; // ENABLE smooth scroll
+
     const tempMessage: ChatMessage = {
       id: `temp-${Date.now()}`,
       senderId: doctor.id,
@@ -279,11 +303,9 @@ export function ChatWithPatients() {
       createdAt: new Date().toISOString(),
     };
 
-    // 1. Optimistic Update: Chat UI
     setMessages((prev) => [...prev, tempMessage]);
     setNewMessage("");
 
-    // 2. Optimistic Update: Sidebar
     setPatients((prev) => {
       const updated = prev.map((p) =>
         p.id === selectedPatient.id
@@ -295,23 +317,24 @@ export function ChatWithPatients() {
           : p
       );
       return updated.sort((a, b) => {
-          const tA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
-          const tB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
-          return tB - tA;
+        const tA = a.lastMessageTime
+          ? new Date(a.lastMessageTime).getTime()
+          : 0;
+        const tB = b.lastMessageTime
+          ? new Date(b.lastMessageTime).getTime()
+          : 0;
+        return tB - tA;
       });
     });
 
-    // 3. Emit Socket
     if (socketRef.current?.connected) {
-        // Ensure we send IDs as strings to be safe
-        socketRef.current.emit("sendMessage", {
-            receiverId: String(selectedPatient.userId),
-            patientId: String(selectedPatient.id),
-            message: tempMessage.message,
-        });
+      socketRef.current.emit("sendMessage", {
+        receiverId: String(selectedPatient.userId),
+        patientId: String(selectedPatient.id),
+        message: tempMessage.message,
+      });
     }
 
-    // 4. Persist to Database
     try {
       const res = await chatAPI.sendMessage({
         receiverId: selectedPatient.userId,
@@ -326,7 +349,6 @@ export function ChatWithPatients() {
       }
     } catch (err) {
       console.error("Failed to send message", err);
-      // Remove the optimistic message on failure
       setMessages((prev) => prev.filter((m) => m.id !== tempMessage.id));
     }
   };
@@ -382,40 +404,60 @@ export function ChatWithPatients() {
           </div>
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto p-2 space-y-1">
-          {filteredPatients.map((patient) => (
-            <button
-              key={patient.id}
-              onClick={() => handleSelectPatient(patient)}
-              className={`w-full flex items-center space-x-3 p-2 rounded-md text-left hover:bg-accent transition ${
-                selectedPatient?.id === patient.id ? "bg-accent" : ""
-              }`}
-            >
-              <Avatar className="w-8 h-8">
-                <AvatarImage src={patient.avatar || undefined} />
-                <AvatarFallback>{patient.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium truncate">{patient.name}</span>
-                  {patient.unreadCount > 0 && (
-                    <Badge className="text-[10px] px-1.5 py-0.5 rounded-full">
-                      {patient.unreadCount}
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center justify-between mt-0.5">
-                  <span className="text-[11px] text-muted-foreground truncate max-w-[120px]">
-                    {patient.lastMessage || "No messages yet"}
-                  </span>
-                  {patient.lastMessageTime && (
-                    <span className="text-[10px] text-muted-foreground ml-2 flex-shrink-0">
-                      {formatTime(patient.lastMessageTime)}
+          {filteredPatients.length === 0 ? (
+            <div className="text-center text-xs text-muted-foreground py-8">
+              No patients found
+            </div>
+          ) : (
+            filteredPatients.map((patient) => (
+              <button
+                key={patient.id}
+                onClick={() => handleSelectPatient(patient)}
+                className={`w-full flex items-center space-x-3 p-2 rounded-md text-left hover:bg-accent transition ${
+                  selectedPatient?.id === patient.id ? "bg-accent" : ""
+                }`}
+              >
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={patient.avatar || undefined} />
+                  <AvatarFallback>
+                    {patient.name.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium truncate">
+                      {patient.name}
                     </span>
-                  )}
+                    {patient.unreadCount > 0 && (
+                      <Badge className="text-[10px] px-1.5 py-0.5 rounded-full">
+                        {patient.unreadCount}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between mt-0.5 w-full">
+                    {patient.lastMessage ? (
+                      <>
+                        {/* LEFT SIDE: Prevents widening */}
+                        <span className="text-[11px] text-muted-foreground truncate block max-w-[120px]">
+                          {patient.lastMessage}
+                        </span>
+
+                        {/* RIGHT SIDE: Timestamp */}
+                        {patient.lastMessageTime && (
+                          <span className="text-[10px] text-muted-foreground ml-2 flex-shrink-0">
+                            {formatTime(patient.lastMessageTime)}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      // Keep height consistent — but do NOT affect width
+                      <div className="h-3 w-full" />
+                    )}
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            ))
+          )}
         </CardContent>
       </Card>
 
@@ -426,17 +468,23 @@ export function ChatWithPatients() {
             <div className="flex items-center space-x-3">
               <Avatar className="w-10 h-10">
                 <AvatarImage src={selectedPatient.avatar || undefined} />
-                <AvatarFallback>{selectedPatient.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarFallback>
+                  {selectedPatient.name.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
               <div>
                 <h3 className="text-lg">{selectedPatient.name}</h3>
-                <span className="text-xs text-muted-foreground">{t("chat.patient")}</span>
+                <span className="text-xs text-muted-foreground">
+                  {t("chat.patient")}
+                </span>
               </div>
             </div>
           ) : (
             <div>
               <h3 className="text-lg">{t("chat.selectPatientTitle")}</h3>
-              <p className="text-sm text-muted-foreground">{t("chat.selectPatientSubtitle")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("chat.selectPatientSubtitle")}
+              </p>
             </div>
           )}
         </CardHeader>
@@ -457,20 +505,43 @@ export function ChatWithPatients() {
                 </div>
                 <div className="space-y-4">
                   {dayMessages.map((message) => {
-                    const isDoctorSender = doctor && message.senderId === doctor.id;
+                    const isDoctorSender =
+                      doctor && message.senderId === doctor.id;
                     return (
                       <div
                         key={message.id}
-                        className={`flex ${isDoctorSender ? "justify-end" : "justify-start"}`}
+                        className={`flex ${
+                          isDoctorSender ? "justify-end" : "justify-start"
+                        }`}
                       >
-                        <div className={`max-w-xs lg:max-w-md ${isDoctorSender ? "order-2" : "order-1"}`}>
-                          <div className={`p-3 rounded-lg ${isDoctorSender ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                        <div
+                          className={`max-w-xs lg:max-w-md ${
+                            isDoctorSender ? "order-2" : "order-1"
+                          }`}
+                        >
+                          <div
+                            className={`p-3 rounded-lg ${
+                              isDoctorSender
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted"
+                            }`}
+                          >
                             <p className="text-sm">{message.message}</p>
-                            <div className={`flex items-center justify-between mt-2 text-xs ${isDoctorSender ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                            <div
+                              className={`flex items-center justify-between mt-2 text-xs ${
+                                isDoctorSender
+                                  ? "text-primary-foreground/70"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
                               <span>{formatTime(message.createdAt)}</span>
                               {isDoctorSender && (
                                 <div className="flex items-center space-x-1 ml-2">
-                                  {message.isRead ? <CheckCheck className="w-3 h-3 text-blue-400" /> : <Clock className="w-3 h-3" />}
+                                  {message.isRead ? (
+                                    <CheckCheck className="w-3 h-3 text-blue-400" />
+                                  ) : (
+                                    <Clock className="w-3 h-3" />
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -488,15 +559,28 @@ export function ChatWithPatients() {
         <div className="border-t p-4">
           <div className="flex items-end space-x-2">
             <Textarea
-              placeholder={selectedPatient ? t("chat.typeMessage") : t("chat.selectPatientToStart")}
+              placeholder={
+                selectedPatient
+                  ? t("chat.typeMessage")
+                  : t("chat.selectPatientToStart")
+              }
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (selectedPatient) sendMessage(); }}}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (selectedPatient) sendMessage();
+                }
+              }}
               rows={1}
               className="resize-none"
               disabled={!selectedPatient}
             />
-            <Button onClick={sendMessage} disabled={!selectedPatient || !newMessage.trim()} className="bg-primary hover:bg-primary/90">
+            <Button
+              onClick={sendMessage}
+              disabled={!selectedPatient || !newMessage.trim()}
+              className="bg-primary hover:bg-primary/90"
+            >
               <Send className="w-4 h-4" />
             </Button>
           </div>

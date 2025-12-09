@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Diet Plan Manager</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f6;
+        }
+        #search-results {
+            max-height: 250px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #a0a0a0 #f4f4f4;
+        }
+        #search-results::-webkit-scrollbar {
+            width: 8px;
+        }
+        #search-results::-webkit-scrollbar-thumb {
+            background-color: #a0a0a0;
+            border-radius: 4px;
+        }
+        
+        /* Drag and Drop Styles */
+        .draggable-source {
+            cursor: grab;
+        }
+        .draggable-source:active {
+            cursor: grabbing;
+        }
+        .drop-zone {
+            transition: all 0.2s ease;
+        }
+        .drop-zone.drag-over {
+            border: 2px dashed #16a34a; /* Green-600 */
+            background-color: #f0fdf4; /* Green-50 */
+            transform: scale(1.01);
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div class="max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-2xl">
+        <h1 class="text-3xl font-extrabold text-blue-700 text-center mb-6 border-b pb-3">
+            🩺 Diet Plan Creator & Assignment
+        </h1>
+
+        <!-- Patient Selection Control -->
+        <div class="controls mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <label for="patient-select" class="font-semibold text-gray-700 mr-4">Assign Plan to:</label>
+            <select id="patient-select" class="p-3 border border-blue-300 rounded-lg flex-grow bg-white focus:ring-blue-500 focus:border-blue-500">
+                <option value="1">Sarah Johnson (ID: 101)</option>
+                <option value="2">Mark Davis (ID: 102)</option>
+                <option value="3">Elena Rodriguez (ID: 103)</option>
+            </select>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- LEFT COLUMN: Search & Source -->
+            <div class="plan-editor">
+                <h2 class="text-xl font-bold text-gray-800 mb-2">1. Find Foods</h2>
+                <p class="text-sm text-gray-500 mb-4">Search or drag items from here to the plan.</p>
+
+                <!-- Food Search -->
+                <div class="add-item-form flex items-center gap-3 mb-4">
+                    <input type="text" id="food-search" placeholder="Type 'egg', 'chicken', 'rice'..." 
+                           class="p-3 border border-gray-300 rounded-lg flex-grow focus:ring-green-500 focus:border-green-500"
+                           onkeyup="if(event.key === 'Enter') searchFood()">
+                    <button onclick="searchFood()" class="px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold shadow-md">
+                        Search
+                    </button>
+                </div>
+
+                <!-- Search Results (Draggable Source) -->
+                <div id="search-results" class="border border-gray-200 rounded-lg bg-gray-50 min-h-[150px] p-2">
+                    <p class="p-3 text-gray-500 text-center italic mt-4">Results will appear here.</p>
+                </div>
+
+                <!-- Manual Quantity Editor (Hidden by default) -->
+                <div id="item-details" class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg hidden flex-col gap-3 shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs text-yellow-600 uppercase font-bold tracking-wide">Selected</p>
+                            <p class="text-lg font-bold text-gray-800" id="selected-food-name"></p>
+                        </div>
+                        <button onclick="closeDetails()" class="text-gray-400 hover:text-gray-600">✕</button>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <label for="quantity" class="font-medium text-sm">Qty:</label>
+                        <input type="number" id="quantity" value="1" min="0.5" step="0.5" class="w-20 p-2 border border-gray-300 rounded-md">
+                        <span id="quantity-unit" class="text-sm text-gray-600 font-medium"></span>
+                    </div>
+                    
+                    <div class="text-xs text-gray-500 grid grid-cols-4 gap-2 text-center mt-1 bg-white p-2 rounded">
+                        <div>
+                            <span class="block font-bold text-gray-700" id="detail-cal">-</span> Cal
+                        </div>
+                        <div>
+                            <span class="block font-bold text-blue-600" id="detail-pro">-</span> Pro
+                        </div>
+                        <div>
+                            <span class="block font-bold text-green-600" id="detail-carb">-</span> Carb
+                        </div>
+                        <div>
+                            <span class="block font-bold text-red-500" id="detail-fat">-</span> Fat
+                        </div>
+                    </div>
+
+                    <button onclick="addItemToPlan()" class="w-full py-2 bg-yellow-500 text-white font-bold rounded hover:bg-yellow-600 transition shadow-sm">
+                        Confirm & Add
+                    </button>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Drop Zone & Plan -->
+            <div class="plan-summary flex flex-col h-full">
+                <h2 class="text-xl font-bold text-gray-800 mb-2">2. Meal Plan: Breakfast</h2>
+                <p class="text-sm text-gray-500 mb-4">Drop items here to add quickly.</p>
+
+                <!-- DROP ZONE -->
+                <div id="drop-zone" class="drop-zone flex-grow border-2 border-dashed border-gray-300 rounded-xl bg-white p-4 min-h-[300px] flex flex-col relative">
+                    
+                    <!-- Empty State Placeholder -->
+                    <div id="empty-plan-msg" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 pointer-events-none">
+                        <svg class="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <p>Drag foods here</p>
+                    </div>
+
+                    <!-- List of items -->
+                    <ul id="current-plan-list" class="space-y-2 relative z-10 w-full mb-4">
+                        <!-- Items go here -->
+                    </ul>
+
+                    <!-- Summary Footer -->
+                    <div class="mt-auto pt-4 border-t border-gray-100">
+                        <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Meal Totals</h4>
+                        <div class="grid grid-cols-4 gap-2 text-center">
+                            <div class="bg-gray-100 p-2 rounded">
+                                <span class="block text-lg font-extrabold text-gray-800" id="total-cals">0</span>
+                                <span class="text-xs text-gray-500">Cals</span>
+                            </div>
+                            <div class="bg-blue-50 p-2 rounded">
+                                <span class="block text-lg font-bold text-blue-700" id="total-pro">0g</span>
+                                <span class="text-xs text-blue-600">Protein</span>
+                            </div>
+                            <div class="bg-green-50 p-2 rounded">
+                                <span class="block text-lg font-bold text-green-700" id="total-carbs">0g</span>
+                                <span class="text-xs text-green-600">Carbs</span>
+                            </div>
+                            <div class="bg-red-50 p-2 rounded">
+                                <span class="block text-lg font-bold text-red-700" id="total-fat">0g</span>
+                                <span class="text-xs text-red-600">Fats</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="assign-btn" class="w-full mt-6 py-4 text-lg font-bold bg-green-600 text-white rounded-xl hover:bg-green-700 transition duration-200 shadow-lg flex items-center justify-center gap-2" onclick="assignPlan()">
+                    <span>✅ Assign to Patient</span>
+                </button>
+            </div>
+        </div>
+
+        <p id="assignment-status" class="fixed top-5 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-xl text-white font-bold hidden z-50 transition-all"></p>
+
+    </div>
+
+    <script>
+        // --- Enhanced Food Database with Macros ---
+        const foodDatabase = [
+            { id: 1, name: "Whole Wheat Bread", calories: 80, protein: 4, carbs: 12, fat: 1, unit: "slice" },
+            { id: 2, name: "Large Egg (Boiled)", calories: 78, protein: 6, carbs: 0.6, fat: 5, unit: "egg" },
+            { id: 3, name: "Apple (Medium)", calories: 95, protein: 0.5, carbs: 25, fat: 0.3, unit: "fruit" },
+            { id: 4, name: "Oatmeal (Cooked)", calories: 150, protein: 5, carbs: 27, fat: 2.5, unit: "cup" },
+            { id: 5, name: "Grilled Chicken Breast", calories: 165, protein: 31, carbs: 0, fat: 3.6, unit: "100g" },
+            { id: 6, name: "Brown Rice (Cooked)", calories: 216, protein: 5, carbs: 45, fat: 1.8, unit: "cup" },
+            { id: 7, name: "Broccoli (Steamed)", calories: 55, protein: 3.7, carbs: 11, fat: 0.6, unit: "cup" },
+            { id: 8, name: "Almonds", calories: 164, protein: 6, carbs: 6, fat: 14, unit: "oz" },
+            { id: 9, name: "Greek Yogurt (Non-fat)", calories: 100, protein: 17, carbs: 6, fat: 0.7, unit: "cup" },
+            { id: 10, name: "Avocado", calories: 240, protein: 3, carbs: 12, fat: 22, unit: "medium" },
+            { id: 11, name: "Salmon Fillet", calories: 233, protein: 25, carbs: 0, fat: 14, unit: "100g" },
+        ];
+
+        let currentPlan = [];
+        let selectedFood = null;
+
+        // --- Drag and Drop Logic ---
+        const dropZone = document.getElementById('drop-zone');
+
+        // Prevent default behavior (Required for drop to work)
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            
+            const foodId = e.dataTransfer.getData('text/plain');
+            if (foodId) {
+                const food = foodDatabase.find(f => f.id == foodId);
+                if (food) {
+                    // Quick add: Defaults to 1 unit
+                    addDirectToPlan(food, 1);
+                    alertUser(`Dropped ${food.name} into plan!`, 'success');
+                }
+            }
+        });
+
+
+        // --- Search Functionality ---
+        function searchFood() {
+            const query = document.getElementById('food-search').value.toLowerCase().trim();
+            const resultsContainer = document.getElementById('search-results');
+            resultsContainer.innerHTML = '';
+
+            // Show common foods if empty
+            let filtered = [];
+            if (query.length === 0) {
+                 filtered = foodDatabase; // Show all for demo purposes if empty
+            } else {
+                 filtered = foodDatabase.filter(food => 
+                    food.name.toLowerCase().includes(query)
+                );
+            }
+
+            if (filtered.length === 0) {
+                resultsContainer.innerHTML = '<p class="p-3 text-gray-500 text-center">No matching foods found.</p>';
+                return;
+            }
+
+            filtered.forEach(food => {
+                const item = document.createElement('div');
+                item.className = 'draggable-source bg-white p-3 mb-2 rounded border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 transition flex justify-between items-center group';
+                item.setAttribute('draggable', true);
+                
+                // Content
+                item.innerHTML = `
+                    <div>
+                        <div class="font-bold text-gray-700 group-hover:text-blue-700">${food.name}</div>
+                        <div class="text-xs text-gray-500 mt-1 flex gap-2">
+                            <span class="bg-gray-100 px-1 rounded">${food.calories} cal</span>
+                            <span class="text-blue-600 font-medium">P:${food.protein}</span>
+                            <span class="text-green-600 font-medium">C:${food.carbs}</span>
+                            <span class="text-red-600 font-medium">F:${food.fat}</span>
+                        </div>
+                    </div>
+                    <button class="text-gray-400 hover:text-green-600" title="Click to select quantity">+</button>
+                `;
+
+                // Events
+                item.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', food.id);
+                    e.dataTransfer.effectAllowed = 'copy';
+                });
+
+                item.onclick = () => selectFood(food);
+                
+                resultsContainer.appendChild(item);
+            });
+        }
+
+        // --- Selection & Manual Add ---
+        function selectFood(food) {
+            selectedFood = food;
+            const details = document.getElementById('item-details');
+            details.classList.remove('hidden');
+            details.classList.add('flex');
+            
+            document.getElementById('selected-food-name').textContent = food.name;
+            document.getElementById('quantity-unit').textContent = food.unit;
+            document.getElementById('quantity').value = 1;
+
+            // Update details pills
+            document.getElementById('detail-cal').textContent = food.calories;
+            document.getElementById('detail-pro').textContent = food.protein;
+            document.getElementById('detail-carb').textContent = food.carbs;
+            document.getElementById('detail-fat').textContent = food.fat;
+        }
+
+        function closeDetails() {
+            document.getElementById('item-details').classList.add('hidden');
+            document.getElementById('item-details').classList.remove('flex');
+            selectedFood = null;
+        }
+
+        function addItemToPlan() {
+            if (!selectedFood) return;
+            const qInput = document.getElementById('quantity');
+            const qty = parseFloat(qInput.value) || 0;
+            
+            if (qty <= 0) {
+                alertUser('Invalid quantity', 'error');
+                return;
+            }
+
+            addDirectToPlan(selectedFood, qty);
+            closeDetails();
+        }
+
+        // --- Core Logic: Add to Plan Array ---
+        function addDirectToPlan(food, qty) {
+            const existingItem = currentPlan.find(i => i.foodId === food.id);
+            
+            // Logic: If item exists, update quantity, otherwise push new
+            // For simplicity in this demo, we will just push new entries or update if exact match
+            
+            const totalCals = Math.round(food.calories * qty);
+            const totalPro = (food.protein * qty).toFixed(1);
+            const totalCarb = (food.carbs * qty).toFixed(1);
+            const totalFat = (food.fat * qty).toFixed(1);
+
+            currentPlan.push({
+                foodId: food.id,
+                name: food.name,
+                unit: food.unit,
+                qty: qty,
+                cals: totalCals,
+                pro: parseFloat(totalPro),
+                carb: parseFloat(totalCarb),
+                fat: parseFloat(totalFat)
+            });
+
+            renderCurrentPlan();
+        }
+
+        function renderCurrentPlan() {
+            const list = document.getElementById('current-plan-list');
+            const emptyMsg = document.getElementById('empty-plan-msg');
+            
+            list.innerHTML = '';
+            
+            if (currentPlan.length === 0) {
+                emptyMsg.style.display = 'flex';
+            } else {
+                emptyMsg.style.display = 'none';
+            }
+
+            // Totals
+            let tCals = 0, tPro = 0, tCarb = 0, tFat = 0;
+
+            currentPlan.forEach((item, index) => {
+                tCals += item.cals;
+                tPro += item.pro;
+                tCarb += item.carb;
+                tFat += item.fat;
+
+                const li = document.createElement('li');
+                li.className = 'bg-white p-3 rounded-lg border-l-4 border-blue-500 shadow-sm flex justify-between items-center group';
+                li.innerHTML = `
+                    <div>
+                        <div class="font-bold text-gray-800">${item.name}</div>
+                        <div class="text-sm text-gray-500">
+                            ${item.qty} ${item.unit} <span class="mx-1">•</span> 
+                            <span class="font-medium text-gray-700">${item.cals} kcal</span>
+                        </div>
+                        <div class="text-[10px] text-gray-400 mt-1 uppercase tracking-wide">
+                            P: ${item.pro}g | C: ${item.carb}g | F: ${item.fat}g
+                        </div>
+                    </div>
+                    <button onclick="removeItem(${index})" class="text-gray-300 hover:text-red-500 transition p-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                `;
+                list.appendChild(li);
+            });
+
+            // Update Summary
+            document.getElementById('total-cals').textContent = tCals;
+            document.getElementById('total-pro').textContent = tPro.toFixed(1) + 'g';
+            document.getElementById('total-carbs').textContent = tCarb.toFixed(1) + 'g';
+            document.getElementById('total-fat').textContent = tFat.toFixed(1) + 'g';
+        }
+
+        function removeItem(index) {
+            currentPlan.splice(index, 1);
+            renderCurrentPlan();
+        }
+
+        function alertUser(msg, type) {
+            const el = document.getElementById('assignment-status');
+            el.textContent = msg;
+            el.classList.remove('hidden', 'bg-green-500', 'bg-red-500');
+            el.classList.add(type === 'success' ? 'bg-green-600' : 'bg-red-500');
+            el.classList.remove('hidden');
+            setTimeout(() => {
+                el.classList.add('hidden');
+            }, 3000);
+        }
+
+        function assignPlan() {
+            if (currentPlan.length === 0) {
+                alertUser("Plan is empty!", "error");
+                return;
+            }
+            const patientSelect = document.getElementById('patient-select');
+            const name = patientSelect.options[patientSelect.selectedIndex].text;
+            alertUser(`Assigned to ${name}!`, 'success');
+            
+            // Reset after delay
+            setTimeout(() => {
+                currentPlan = [];
+                renderCurrentPlan();
+            }, 2000);
+        }
+
+        // Initialize with all foods visible for demo
+        document.addEventListener('DOMContentLoaded', searchFood);
+    </script>
+</body>
+</html>

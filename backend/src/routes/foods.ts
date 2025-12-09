@@ -16,6 +16,13 @@ router.get('/', validateQuery(paginationSchema), foodController.getAllFoods);
 // Create new food (Doctor only)
 router.post('/', authorizeRoles('DOCTOR'), validateRequest(createFoodSchema), foodController.createFood);
 
+// Search foods by category
+router.get('/category/:category',
+  validateQuery(paginationSchema), // keep pagination validation
+  foodController.getFoodsByCategory
+);
+
+
 // Get food by ID
 router.get('/:id', validateParams(idSchema), foodController.getFoodById);
 
@@ -25,8 +32,6 @@ router.put('/:id', authorizeRoles('DOCTOR'), validateParams(idSchema), validateR
 // Delete food (Doctor only)
 router.delete('/:id', authorizeRoles('DOCTOR'), validateParams(idSchema), foodController.deleteFood);
 
-// Search foods by category
-router.get('/category/:category', validateParams(idSchema), validateQuery(paginationSchema), foodController.getFoodsByCategory);
 
 export default router;
 
