@@ -14,13 +14,10 @@ import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
 import patientRoutes from './routes/patients';
 import foodRoutes from './routes/foods';
-import recipeRoutes from './routes/recipes';
 import dietPlanRoutes from './routes/dietPlans';
 import chatRoutes from './routes/chat';
 import reminderRoutes from './routes/reminders';
 import healthRecordRoutes from './routes/healthRecords';
-import diseaseRoutes from "./routes/desease";
-import superAdmin from "./routes/superAdmin";
 
 
 // Load environment variables
@@ -99,15 +96,12 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/diseases', diseaseRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/foods', foodRoutes);
-app.use('/api/recipes', recipeRoutes);
 app.use('/api/diet-plans', dietPlanRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/reminders', reminderRoutes);
 app.use('/api/health-records', healthRecordRoutes);
-app.use('/api/super-admin', superAdmin);
 
 // Error handling middleware
 app.use(notFound);

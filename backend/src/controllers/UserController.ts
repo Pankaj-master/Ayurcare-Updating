@@ -45,16 +45,6 @@ export class UserController {
             medications: true,
             createdAt: true,
             updatedAt: true,
-
-            disease: {
-              select: {
-                id: true,
-                name: true,
-                vata: true,
-                pitta: true,
-                kapha: true,
-              },
-            },
           },
         }),
         prisma.user.count(),
@@ -117,16 +107,6 @@ export class UserController {
           medications: true,
           createdAt: true,
           updatedAt: true,
-
-          disease: {
-            select: {
-              id: true,
-              name: true,
-              vata: true,
-              pitta: true,
-              kapha: true,
-            },
-          },
         },
       });
 

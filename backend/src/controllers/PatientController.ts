@@ -65,7 +65,6 @@ export class PatientController {
         bowelMovement,
         phone,
         address,
-        diseaseId,
       } = req.body;
 
       // 1. Generate temp password
@@ -307,15 +306,6 @@ export class PatientController {
               name: true,
               avatar: true,
               email: true,
-              disease: {
-                select: {
-                  id: true,
-                  name: true,
-                  vata: true,
-                  pitta: true,
-                  kapha: true,
-                },
-              },
             },
           },
         },
@@ -329,16 +319,6 @@ export class PatientController {
         avatar: p.user.avatar,
         email: p.user.email,
 
-        // ⭐ Include disease
-        disease: p.user.disease
-          ? {
-              id: p.user.disease.id,
-              name: p.user.disease.name,
-              vata: p.user.disease.vata,
-              pitta: p.user.disease.pitta,
-              kapha: p.user.disease.kapha,
-            }
-          : null,
       }));
 
       return res.json({

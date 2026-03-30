@@ -13,8 +13,6 @@ datasource db {
 enum UserRole {
   DOCTOR
   PATIENT
-  SUPER_ADMIN
-  STAFF
 }
 
 enum Verified {
@@ -78,9 +76,7 @@ model User {
   medicalHistory String?
   allergies      String?
   medications    String?
-  diseaseId   String?
-  disease     Disease? @relation(fields: [diseaseId], references: [id], onDelete: SetNull)
-  is_verified    Verified?
+  disease        String?
 
 
   // Relations
@@ -92,7 +88,6 @@ model User {
   receivedMessages    ChatMessage[] @relation("ReceivedMessages")
   healthRecords       HealthRecord[] @relation("PatientHealthRecords")
   reminders           Reminder[]    @relation("UserReminders")
-  collections         Collection[]  @relation("DoctorCollections")
 
   @@map("users")
 }
@@ -122,7 +117,6 @@ model Patient {
 
   @@map("patients")
 }
-
 
 model Food {
   id            String   @id @default(cuid())
@@ -168,44 +162,8 @@ model Food {
 
   // Relations
   dietPlanItems DietPlanItem[]
-  recipeItems   RecipeItem[] // kept for compatibility but unused
 
   @@map("foods")
-}
-
-
-model Recipe {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  instructions String
-  prepTime    Int? // in minutes
-  cookTime    Int? // in minutes
-  servings    Int?
-  difficulty  String?
-  imageUrl    String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  items RecipeItem[]
-
-  @@map("recipes")
-}
-
-model RecipeItem {
-  id       String @id @default(cuid())
-  recipeId String
-  foodId   String
-  quantity Float
-  unit     String
-
-  // Relations
-  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-  food   Food   @relation(fields: [foodId], references: [id])
-
-  @@map("recipe_items")
 }
 
 model DietPlan {
@@ -250,23 +208,6 @@ model DietPlanItem {
   food       Food?     @relation(fields: [foodId], references: [id])
 
   @@map("diet_plan_items")
-}
-
-model Disease {
-  id          String   @id @default(cuid())
-  name        String   @unique
-
-  // Dosha Impact: +1 = increases, -1 = decreases, 0 = neutral
-  vata   Int     @default(0)
-  pitta  Int     @default(0)
-  kapha  Int     @default(0)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  users    User[]
-
-  @@map("disease")
 }
 
 model HealthRecord {
@@ -329,19 +270,4 @@ model Reminder {
   @@map("reminders")
 }
 
-
-model Collection {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  doctorId    String
-  isPublic    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  doctor User @relation("DoctorCollections", fields: [doctorId], references: [id])
-
-  @@map("collections")
-}
 

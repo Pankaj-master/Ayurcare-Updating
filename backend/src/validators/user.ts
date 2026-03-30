@@ -25,7 +25,6 @@ export const updateUserSchema = Joi.object({
   medicalHistory: Joi.string().optional(),
   allergies: Joi.string().optional(),
   medications: Joi.string().optional(),
-  diseaseId: Joi.string().optional()
 });
 
 

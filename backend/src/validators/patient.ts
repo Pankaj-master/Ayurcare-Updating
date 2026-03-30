@@ -24,11 +24,11 @@ export const createPatientSchema = Joi.object({
   weight: Joi.number().positive().optional(),
   sleepPattern: Joi.string().optional(),
   bowelMovement: Joi.string().optional(),
+  disease: Joi.string().optional(),
   bloodGroup: Joi.string().optional(),
   mealFrequency: Joi.number().integer().min(1).max(20).optional(),
   waterIntake: Joi.number().positive().optional(),
   notes: Joi.string().optional(),
-  diseaseId: Joi.string().optional(),
 });
 
 

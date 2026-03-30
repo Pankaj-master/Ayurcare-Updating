@@ -78,17 +78,17 @@ export interface FoodRequest {
   imageUrl?: string;
 }
 
-export interface RecipeRequest {
-  name: string;
-  description?: string;
-  instructions: string;
-  prepTime?: number;
-  cookTime?: number;
-  servings?: number;
-  difficulty?: string;
-  imageUrl?: string;
-  items: RecipeItemRequest[];
-}
+// export interface RecipeRequest {
+//   name: string;
+//   description?: string;
+//   instructions: string;
+//   prepTime?: number;
+//   cookTime?: number;
+//   servings?: number;
+//   difficulty?: string;
+//   imageUrl?: string;
+//   items: RecipeItemRequest[];
+// }
 
 export interface RecipeItemRequest {
   foodId: string;

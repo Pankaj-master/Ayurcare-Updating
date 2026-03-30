@@ -103,22 +103,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   // --------------------------
   let navigationItems: any[] = [];
 
-  if (user?.role === "SUPER_ADMIN") {
-    navigationItems = adminNavigationItems(t);
-
-  } else if (user?.role === "DOCTOR") {
-    if (user?.is_verified !== "VERIFIED") {
-      navigationItems = [
-        { id: "pending", label: "Verification Pending", icon: Clock, path: "/doctor/pending" }
-      ];
-    } else {
-      navigationItems = doctorNavigationItems(t);
-    }
-
-  } else if (user?.role === "STAFF") {
-    navigationItems = staffNavigationItems(t);
-
-  } else {
+  if (user?.role === "DOCTOR") {
+    navigationItems = doctorNavigationItems(t);
+  }else {
     navigationItems = patientNavigationItems(t);
   }
 
