@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://10.148.199.194:5000/api";
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 // Create axios instance
 const api = axios.create({
@@ -299,7 +299,7 @@ export const superAdminAPI = {
 
   // 📌 REJECT doctor
   rejectDoctor: (id: string, reason?: string) =>
-    api.post(`/super-admin/doctors/${id}/reject`, { notes: reason }),
+    api.post(`/super-admin/doctors/${id}/reject`, { reason }),
 
   // 📌 GET admin dashboard stats
   getStats: () => api.get("/super-admin/stats"),

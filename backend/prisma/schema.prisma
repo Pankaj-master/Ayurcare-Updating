@@ -78,21 +78,22 @@ model User {
   medicalHistory String?
   allergies      String?
   medications    String?
-  diseaseId   String?
-  disease     Disease? @relation(fields: [diseaseId], references: [id], onDelete: SetNull)
+  diseaseId      String?
+  disease        Disease?   @relation(fields: [diseaseId], references: [id], onDelete: SetNull)
   is_verified    Verified?
 
-
   // Relations
-  doctorPatients     Patient[]      @relation("DoctorPatients")       // doctor → patients
-  patientProfile     Patient?       @relation("UserPatientProfile")   // user → patient profile
-  createdDietPlans    DietPlan[]    @relation("CreatedDietPlans")
-  patientDietPlans    DietPlan[]    @relation("PatientDietPlans")
-  sentMessages        ChatMessage[] @relation("SentMessages")
-  receivedMessages    ChatMessage[] @relation("ReceivedMessages")
-  healthRecords       HealthRecord[] @relation("PatientHealthRecords")
-  reminders           Reminder[]    @relation("UserReminders")
-  collections         Collection[]  @relation("DoctorCollections")
+  doctorPatients   Patient[]      @relation("DoctorPatients") // doctor → patients
+  patientProfile   Patient?       @relation("UserPatientProfile") // user → patient profile
+  createdDietPlans DietPlan[]     @relation("CreatedDietPlans")
+  patientDietPlans DietPlan[]     @relation("PatientDietPlans")
+  sentMessages     ChatMessage[]  @relation("SentMessages")
+  receivedMessages ChatMessage[]  @relation("ReceivedMessages")
+  healthRecords    HealthRecord[] @relation("PatientHealthRecords")
+  reminders        Reminder[]     @relation("UserReminders")
+  collections      Collection[]   @relation("DoctorCollections")
+  doctorStaff      DoctorStaff[]  @relation("DoctorStaffDoctor")
+  staffOf          DoctorStaff[]  @relation("DoctorStaffStaff")
 
   @@map("users")
 }
@@ -106,75 +107,75 @@ model Patient {
   updatedAt   DateTime @updatedAt
 
   // New patient-specific fields
-  height         Float?
-  weight         Float?
-  sleepPattern   String?
-  bowelMovement  String?
-  bloodGroup     String?
-  mealFrequency  Int?
-  waterIntake    Float?
-  notes          String?
+  height        Float?
+  weight        Float?
+  sleepPattern  String?
+  bowelMovement String?
+  bloodGroup    String?
+  mealFrequency Int?
+  waterIntake   Float?
+  notes         String?
 
   // Relations
-  user         User   @relation("UserPatientProfile", fields: [userId], references: [id], onDelete: Cascade)
-  doctor       User   @relation("DoctorPatients", fields: [doctorId], references: [id])
+  user         User          @relation("UserPatientProfile", fields: [userId], references: [id], onDelete: Cascade)
+  doctor       User          @relation("DoctorPatients", fields: [doctorId], references: [id])
   chatMessages ChatMessage[] @relation("PatientChatMessages")
 
   @@map("patients")
 }
-model DoctorStaff {
-  id        String @id @default(cuid())
-  doctorId  String
-  staffId   String
 
-  doctor    User   @relation("DoctorStaffDoctor", fields: [doctorId], references: [id])
-  staff     User   @relation("DoctorStaffStaff", fields: [staffId], references: [id])
+model DoctorStaff {
+  id       String @id @default(cuid())
+  doctorId String
+  staffId  String
+
+  doctor User @relation("DoctorStaffDoctor", fields: [doctorId], references: [id])
+  staff  User @relation("DoctorStaffStaff", fields: [staffId], references: [id])
 
   createdAt DateTime @default(now())
 }
 
-
 model Food {
-  id            String   @id @default(cuid())
-  name          String
-  description   String?
-  category      FoodCategory
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  category    FoodCategory
 
   // Nutrition
-  calories      Float?
-  protein       Float?
-  carbs         Float?
-  fat           Float?
-  fiber         Float?
-  vitamins      String?      // JSON string
-  minerals      String?      // JSON string
+  calories    Float?
+  protein     Float?
+  carbs       Float?
+  fat         Float?
+  fiber       Float?
+  vitamins    String? // JSON string
+  minerals    String? // JSON string
   // ⭐ Individual dosha columns
-  vata          Int?      @default(0) // -1, 0, 1
-  pitta         Int?      @default(0) // -1, 0, 1
-  kapha         Int?      @default(0) // -1, 0, 1
-  benefits      String?      // JSON: health benefits
-  precautions   String?      // JSON: avoid if...
+  vata        Int?    @default(0) // -1, 0, 1
+  pitta       Int?    @default(0) // -1, 0, 1
+  kapha       Int?    @default(0) // -1, 0, 1
+  benefits    String? // JSON: health benefits
+  precautions String? // JSON: avoid if...
 
-  imageUrl      String?
-  isActive      Boolean     @default(true)
+  imageUrl String?
+  isActive Boolean @default(true)
 
   // ⭐ Added fields to make Food act like a Recipe
-  isRecipe      Boolean     @default(false) // true = treat as recipe/meal
-  ingredients   String?                  // JSON list of ingredients
-  instructions  String?                  // preparation steps
-  prepTime      Int?                     // minutes
-  cookTime      Int?
-  servings      Int?
-  dietaryNotes  String?                  // Ayurveda-specific notes
+  isRecipe     Boolean @default(false) // true = treat as recipe/meal
+  ingredients  String? // JSON list of ingredients
+  instructions String? // preparation steps
+  prepTime     Int? // minutes
+  cookTime     Int?
+  servings     Int?
+  dietaryNotes String? // Ayurveda-specific notes
 
   // ayurvedic field
-  rasa          String?
-  virya         String?
-  guna          String?
-  vipaka        String?
+  rasa   String?
+  virya  String?
+  guna   String?
+  vipaka String?
 
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   dietPlanItems DietPlanItem[]
@@ -183,20 +184,19 @@ model Food {
   @@map("foods")
 }
 
-
 model Recipe {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
   instructions String
-  prepTime    Int? // in minutes
-  cookTime    Int? // in minutes
-  servings    Int?
-  difficulty  String?
-  imageUrl    String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  prepTime     Int? // in minutes
+  cookTime     Int? // in minutes
+  servings     Int?
+  difficulty   String?
+  imageUrl     String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
   items RecipeItem[]
@@ -219,80 +219,79 @@ model RecipeItem {
 }
 
 model DietPlan {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   name        String
   description String?
   doctorId    String
   patientId   String?
   doshaType   DoshaType?
-  duration    Int?     @default(1)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  duration    Int?       @default(1)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
-  doctor  User         @relation("CreatedDietPlans", fields: [doctorId], references: [id])
-  patient User?        @relation("PatientDietPlans", fields: [patientId], references: [id])
+  doctor  User           @relation("CreatedDietPlans", fields: [doctorId], references: [id])
+  patient User?          @relation("PatientDietPlans", fields: [patientId], references: [id])
   items   DietPlanItem[]
 
   @@map("diet_plans")
 }
 
-
 model DietPlanItem {
-  id         String   @id @default(cuid())
+  id         String  @id @default(cuid())
   dietPlanId String
   foodId     String?
 
-  mealType   MealType
-  quantity   Float?
-  unit       String?
-  notes      String?
+  mealType MealType
+  quantity Float?
+  unit     String?
+  notes    String?
 
   // ⭐ New field for multi-day diet plans
-  dayNumber  Int       @default(1)
+  dayNumber Int @default(1)
 
-  dayOfWeek  Int?      // optional: Monday–Sunday (1–7)
-  time       String?   // HH:MM format
+  dayOfWeek Int? // optional: Monday–Sunday (1–7)
+  time      String? // HH:MM format
 
-  totals      Json?
+  totals Json?
 
-  dietPlan   DietPlan  @relation(fields: [dietPlanId], references: [id], onDelete: Cascade)
-  food       Food?     @relation(fields: [foodId], references: [id])
+  dietPlan DietPlan @relation(fields: [dietPlanId], references: [id], onDelete: Cascade)
+  food     Food?    @relation(fields: [foodId], references: [id])
 
   @@map("diet_plan_items")
 }
 
 model Disease {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id   String @id @default(cuid())
+  name String @unique
 
   // Dosha Impact: +1 = increases, -1 = decreases, 0 = neutral
-  vata   Int     @default(0)
-  pitta  Int     @default(0)
-  kapha  Int     @default(0)
+  vata  Int @default(0)
+  pitta Int @default(0)
+  kapha Int @default(0)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  users    User[]
+  users User[]
 
   @@map("disease")
 }
 
 model HealthRecord {
-  id        String   @id @default(cuid())
-  patientId String
-  date      DateTime
-  weight    Float?
-  height    Float?
+  id            String   @id @default(cuid())
+  patientId     String
+  date          DateTime
+  weight        Float?
+  height        Float?
   bloodPressure String?
-  heartRate Int?
-  temperature Float?
-  symptoms  String?
-  diagnosis String?
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  heartRate     Int?
+  temperature   Float?
+  symptoms      String?
+  diagnosis     String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relations
   patient User @relation("PatientHealthRecords", fields: [patientId], references: [id])
@@ -301,44 +300,43 @@ model HealthRecord {
 }
 
 model ChatMessage {
-  id        String   @id @default(cuid())
-  senderId  String
+  id         String   @id @default(cuid())
+  senderId   String
   receiverId String?
-  patientId String?
-  message   String
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
+  patientId  String?
+  message    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
 
   // Relations
-  sender   User    @relation("SentMessages", fields: [senderId], references: [id])
-  receiver User?   @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender   User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User?    @relation("ReceivedMessages", fields: [receiverId], references: [id])
   patient  Patient? @relation("PatientChatMessages", fields: [patientId], references: [id])
 
   @@map("chat_messages")
 }
 
 model Reminder {
-  id            String      @id @default(cuid())
+  id            String    @id @default(cuid())
   userId        String
   title         String
-  message       String?     // replacing ‘description’
-  description   String?     // new field
-  type          String?     // meal, medicine, activity, hydration
-  frequency     String?     // daily, weekdays, weekends, custom
-  days          String[]   @default([])
+  message       String? // replacing ‘description’
+  description   String? // new field
+  type          String? // meal, medicine, activity, hydration
+  frequency     String? // daily, weekdays, weekends, custom
+  days          String[]  @default([])
   lastTriggered DateTime?
   nextTrigger   DateTime?
-  date          DateTime?   // optional, may not be needed
+  date          DateTime? // optional, may not be needed
   time          String
-  isActive      Boolean     @default(true)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   user User @relation("UserReminders", fields: [userId], references: [id])
 
   @@map("reminders")
 }
-
 
 model Collection {
   id          String   @id @default(cuid())
@@ -354,4 +352,3 @@ model Collection {
 
   @@map("collections")
 }
-

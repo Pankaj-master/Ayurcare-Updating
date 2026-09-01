@@ -252,10 +252,12 @@ export class ChatController {
     }
   }
 
-  async getChatSummary(req: Request, res: Response) {
+  async getChatSummary(req: AuthRequest, res: Response) {
     try {
-      const { user } = req as any;
-      const doctorId = user.id;
+      const doctorId = req.user?.userId;
+      if (!doctorId) {
+        return res.status(401).json({ success: false, message: "Unauthorized"});
+      }
 
       // Find patients assigned to doctor
       const patients = await prisma.patient.findMany({

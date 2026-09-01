@@ -93,6 +93,7 @@ export class PatientController {
             medicalHistory,
             allergies,
             medications,
+            diseaseId: diseaseId || null,
           },
         });
 
@@ -113,7 +114,11 @@ export class PatientController {
       });
 
       // 4. Send email with temporary password
-      await sendTempPasswordMail(email, tempPassword);
+      try {
+        await sendTempPasswordMail(email, tempPassword);
+      } catch (mailError) {
+        console.warn("⚠️ Warning: Failed to send temporary password email:", mailError);
+      }
 
       // 5. Fetch the complete patient with user relation for response
       const patientWithUser = await prisma.patient.findUnique({
@@ -293,10 +298,12 @@ export class PatientController {
     }
   }
 
-  async getPatientsByDoctor(req: Request, res: Response) {
+  async getPatientsByDoctor(req: AuthRequest, res: Response) {
     try {
-      const { user } = req as any;
-      const doctorId = user!.userId; // coming from authenticateToken middleware
+      const doctorId = req.user?.userId;
+      if (!doctorId) {
+        return res.status(401).json({ success: false, message: "Unauthorized"});
+      } // coming from authenticateToken middleware
 
       const patients = await prisma.patient.findMany({
         where: { doctorId },
@@ -322,7 +329,7 @@ export class PatientController {
         orderBy: { createdAt: "desc" },
       });
 
-      const formatted = patients.map((p) => ({
+      const formatted = patients.map((p: any) => ({
         patientId: p.id,
         userId: p.user.id,
         name: p.user.name,

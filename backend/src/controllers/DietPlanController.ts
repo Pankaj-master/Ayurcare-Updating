@@ -349,7 +349,7 @@ export class DietPlanController {
         return;
       }
 
-      const { items, ...base } = existing;
+      const { items, id: _oldId, createdAt, updatedAt, ...base } = existing;
 
       const duplicated = await prisma.dietPlan.create({
         data: {

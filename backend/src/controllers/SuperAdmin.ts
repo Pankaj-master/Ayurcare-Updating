@@ -154,6 +154,13 @@ export class SuperAdminController {
       });
       await sendDoctorVerificationMail(doctor.email, doctor.name);
 
+      //Safe email wrap
+      try{
+        await sendDoctorVerificationMail(doctor.email, doctor.name);
+      } catch (mailError) {
+        console.warn("⚠️ Warning: Failed to send verification email:", mailError);
+      }
+
       return res.json({
         success: true,
         message: "Doctor approved successfully",
@@ -175,6 +182,7 @@ export class SuperAdminController {
   async rejectDoctor(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      const rejectionReason = req.body.reason || req.body.notes || "No reason provided."
 
       const doctor = await prisma.user.update({
         where: { id },
@@ -182,7 +190,13 @@ export class SuperAdminController {
           is_verified: Verified.REJECTED,
         },
       });
-      await sendDoctorRejectionMail(doctor.email, doctor.name, req.body.reason);
+
+      //safe emaiol with fallback reason
+      try {
+      await sendDoctorRejectionMail(doctor.email, doctor.name, rejectionReason);
+      } catch (mailError) {
+        console.warn("⚠️ Warning: Failed to send rejection email:", mailError);
+      }
 
       return res.json({
         success: true,

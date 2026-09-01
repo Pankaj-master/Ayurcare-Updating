@@ -111,7 +111,7 @@ function AppContent() {
       <DashboardLayout>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/recipes" element={<AyurvedicFoodGenerator />} />
+          <Route path="/food-generator" element={<AyurvedicFoodGenerator />} />
 
           {/* Common Routes */}
           <Route path="/dashboard" element={<Dashboard />} />
