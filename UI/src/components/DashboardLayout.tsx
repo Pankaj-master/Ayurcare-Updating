@@ -57,6 +57,8 @@ const doctorNavigationItems = (t: any) => [
   { id: "patients", label: t("sidebar.patients"), icon: Users, path: "/patients" },
 
   { id: "create-diet-plans", label: t("sidebar.dietPlans"), icon: ChefHat, path: "/create-diet-plans" },
+  
+  { id: "auto-generate", label: "AI Diet Generator", icon: Wand2, path: "/auto-generate" },
   { id: "food-database", label: t("sidebar.foodDatabase"), icon: Database, path: "/food-database" },
 
   { id: "chat", label: t("sidebar.chat"), icon: MessageCircle, path: "/chat-doctor" },

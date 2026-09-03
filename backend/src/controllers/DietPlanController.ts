@@ -39,21 +39,51 @@ export class DietPlanController {
   }
 
   // -------------------------------------------------------
+    // -------------------------------------------------------
   // CREATE DIET PLAN
   // -------------------------------------------------------
   async createDietPlan(req: Request, res: Response): Promise<void> {
     try {
       const { items, ...dietPlanData } = req.body;
 
-      // Ensure each item has dayNumber (required now)
-      const updatedItems = items.map((item: any) => ({
+      // 1. Ensure required doctorId (references User.id)
+      const doctorId = (req as any).user?.userId || dietPlanData.doctorId;
+
+      // 2. Resolve patientId to User.id (since DietPlan.patientId references User.id!)
+      let targetUserId: string | null = null;
+      if (dietPlanData.patientId) {
+        // Check if patientId is already a User.id
+        const userExists = await prisma.user.findUnique({
+          where: { id: dietPlanData.patientId },
+        });
+
+        if (userExists) {
+          targetUserId = userExists.id;
+        } else {
+          // If it's a Patient profile id, get the associated userId
+          const patientProfile = await prisma.patient.findUnique({
+            where: { id: dietPlanData.patientId },
+          });
+          if (patientProfile) {
+            targetUserId = patientProfile.userId;
+          }
+        }
+      }
+
+      // 3. Ensure each item has dayNumber
+      const updatedItems = (items || []).map((item: any) => ({
         ...item,
-        dayNumber: item.dayNumber ?? 1, // fallback to day 1 if missing
+        dayNumber: item.dayNumber ?? 1,
       }));
 
       const dietPlan = await prisma.dietPlan.create({
         data: {
-          ...dietPlanData,
+          patientId: targetUserId, // 👈 Correctly links to User.id!
+          doctorId,
+          name: dietPlanData.name,
+          description: dietPlanData.description,
+          duration: dietPlanData.duration ?? 7,
+          isActive: dietPlanData.isActive ?? true,
           items: {
             create: updatedItems,
           },
@@ -71,6 +101,7 @@ export class DietPlanController {
         data: dietPlan,
       });
     } catch (error) {
+      console.error("Create diet plan error:", error);
       res.status(500).json({
         success: false,
         message: "Error creating diet plan",
@@ -78,7 +109,6 @@ export class DietPlanController {
       });
     }
   }
-
   // -------------------------------------------------------
   // GET DIET PLAN BY ID
   // -------------------------------------------------------
